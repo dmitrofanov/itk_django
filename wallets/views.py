@@ -48,6 +48,8 @@ def wallet_operation(request, wallet_uuid):
         "operation_type": "DEPOSIT" or "WITHDRAW",
         "amount": 1000
     }
+
+    Note: operation_type values are defined in wallets.constants
     """
     # Validate input data
     serializer = WalletOperationSerializer(data=request.data)

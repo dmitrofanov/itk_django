@@ -2,6 +2,10 @@ import logging
 
 from django.db import transaction
 
+from .constants import (
+    OPERATION_TYPE_DEPOSIT,
+    OPERATION_TYPE_WITHDRAW,
+)
 from .exceptions import (
     InsufficientBalanceError,
     UnknownOperationTypeError,
@@ -20,7 +24,7 @@ def execute_wallet_operation(wallet_uuid, operation_type, amount):
 
     Args:
         wallet_uuid: UUID of the wallet
-        operation_type: 'DEPOSIT' or 'WITHDRAW'
+        operation_type: OPERATION_TYPE_DEPOSIT or OPERATION_TYPE_WITHDRAW
         amount: Operation amount
 
     Returns:
@@ -39,13 +43,13 @@ def execute_wallet_operation(wallet_uuid, operation_type, amount):
         raise WalletNotFoundError(f"Wallet {wallet_uuid} not found")
 
     # Execute operation based on type
-    if operation_type == 'DEPOSIT':
+    if operation_type == OPERATION_TYPE_DEPOSIT:
         wallet.balance += amount
         logger.info(
             f"Deposit {amount} to wallet {wallet_uuid}. "
             f"New balance: {wallet.balance}"
         )
-    elif operation_type == 'WITHDRAW':
+    elif operation_type == OPERATION_TYPE_WITHDRAW:
         if wallet.balance < amount:
             logger.warning(
                 f"Insufficient balance for wallet {wallet_uuid}. "
@@ -63,7 +67,7 @@ def execute_wallet_operation(wallet_uuid, operation_type, amount):
     else:
         raise UnknownOperationTypeError(
             f"Unknown operation type: {operation_type}. "
-            f"Expected 'DEPOSIT' or 'WITHDRAW'"
+            f"Expected {OPERATION_TYPE_DEPOSIT} or {OPERATION_TYPE_WITHDRAW}"
         )
 
     # Save wallet with updated balance

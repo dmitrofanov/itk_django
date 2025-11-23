@@ -9,7 +9,9 @@ from .constants import (
     DECIMAL_MAX_DIGITS,
     DECIMAL_PLACES,
     OPERATION_MIN_AMOUNT,
+    OPERATION_TYPE_DEPOSIT,
     OPERATION_TYPE_MAX_LENGTH,
+    OPERATION_TYPE_WITHDRAW,
     WALLET_DEFAULT_BALANCE,
     WALLET_MIN_BALANCE,
 )
@@ -51,8 +53,8 @@ class WalletOperation(models.Model):
     """Model for storing wallet operation history."""
     # Available operation types
     OPERATION_TYPES = [
-        ('DEPOSIT', 'Deposit'),
-        ('WITHDRAW', 'Withdraw'),
+        (OPERATION_TYPE_DEPOSIT, 'Deposit'),
+        (OPERATION_TYPE_WITHDRAW, 'Withdraw'),
     ]
 
     id = models.UUIDField(
