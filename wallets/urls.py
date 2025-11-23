@@ -4,6 +4,8 @@ from . import views
 
 app_name = 'wallets'
 
+# URL patterns for wallet API v1
+# More specific routes must come before less specific ones
 urlpatterns = [
     path(
         'wallets/<uuid:wallet_uuid>/operation/',

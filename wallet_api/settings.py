@@ -23,7 +23,7 @@ SECRET_KEY = os.getenv(
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = os.getenv('DEBUG', 'False') == 'True'
 
-# ALLOWED_HOSTS должен быть списком, даже если переменная не установлена
+# ALLOWED_HOSTS must be a list, even if variable is not set
 allowed_hosts_str = os.getenv('DJANGO_ALLOWED_HOSTS', '*')
 if allowed_hosts_str != '*':
     ALLOWED_HOSTS = [
@@ -149,7 +149,7 @@ REST_FRAMEWORK = {
     ],
 }
 
-# CORS и CSRF настройки - фильтруем пустые значения
+# CORS and CSRF settings - filter empty values
 cors_origins = os.environ.get('CORS_ALLOWED_ORIGINS', '')
 if cors_origins:
     CORS_ALLOWED_ORIGINS = [
@@ -186,7 +186,7 @@ LOGGING = {
         },
         'django.db.backends': {
             'handlers': ['console'],
-            # DEBUG уровень только в development
+            # DEBUG level only in development
             'level': 'WARNING' if not DEBUG else 'DEBUG',
             'propagate': False,
         },

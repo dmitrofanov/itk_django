@@ -1,5 +1,5 @@
 #!/bin/sh
-# Скрипт ожидания готовности базы данных PostgreSQL
+# Script to wait for PostgreSQL database to be ready
 
 set -e
 
@@ -7,7 +7,7 @@ host="$1"
 shift
 cmd="$@"
 
-# Проверяем, что переменные окружения установлены
+# Check that environment variables are set
 if [ -z "$POSTGRES_DB" ] || [ -z "$POSTGRES_USER" ] || [ -z "$POSTGRES_PASSWORD" ]; then
   >&2 echo "Error: POSTGRES_DB, POSTGRES_USER, or POSTGRES_PASSWORD not set"
   exit 1

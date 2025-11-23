@@ -6,6 +6,7 @@ from django.urls import path, include
 
 urlpatterns = [
     path('admin/', admin.site.urls),
+    # API v1 routes
     path('api/v1/', include('wallets.urls')),
 ]
 

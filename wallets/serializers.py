@@ -6,15 +6,16 @@ from .models import Wallet, WalletOperation
 
 
 class WalletSerializer(serializers.ModelSerializer):
-    """Сериализатор для кошелька."""
+    """Serializer for wallet."""
 
     class Meta:
         model = Wallet
         fields = ['id', 'balance', 'created_at', 'updated_at']
+        # Prevent modification of system fields
         read_only_fields = ['id', 'created_at', 'updated_at']
 
     def validate_balance(self, value):
-        """Валидация баланса (если используется для обновления)."""
+        """Validate balance (if used for update)."""
         if value < 0:
             raise serializers.ValidationError(
                 "Balance cannot be negative"
@@ -23,9 +24,9 @@ class WalletSerializer(serializers.ModelSerializer):
 
 
 class WalletOperationSerializer(serializers.Serializer):
-    """Сериализатор для операции с кошельком."""
+    """Serializer for wallet operation."""
 
-    # Используем константы из модели
+    # Use constants from model
     operation_type = serializers.ChoiceField(
         choices=[
             choice[0]
@@ -39,7 +40,7 @@ class WalletOperationSerializer(serializers.Serializer):
     )
 
     def validate_amount(self, value):
-        """Дополнительная валидация суммы."""
+        """Additional amount validation."""
         if value <= 0:
             raise serializers.ValidationError(
                 "Amount must be greater than zero"

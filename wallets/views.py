@@ -12,13 +12,14 @@ from .serializers import (
     WalletSerializer
 )
 
+# Logger for wallet operations
 logger = logging.getLogger('wallets')
 
 
 @api_view(['GET'])
 def wallet_detail(request, wallet_uuid):
     """
-    Получить информацию о кошельке по UUID.
+    Get wallet information by UUID.
 
     GET /api/v1/wallets/{WALLET_UUID}
     """
@@ -33,7 +34,7 @@ def wallet_detail(request, wallet_uuid):
 @api_view(['POST'])
 def wallet_operation(request, wallet_uuid):
     """
-    Выполнить операцию с кошельком (DEPOSIT или WITHDRAW).
+    Execute wallet operation (DEPOSIT or WITHDRAW).
 
     POST /api/v1/wallets/{WALLET_UUID}/operation
 
@@ -43,6 +44,7 @@ def wallet_operation(request, wallet_uuid):
         "amount": 1000
     }
     """
+    # Validate input data
     serializer = WalletOperationSerializer(data=request.data)
     if not serializer.is_valid():
         logger.warning(
@@ -53,15 +55,14 @@ def wallet_operation(request, wallet_uuid):
             serializer.errors,
             status=status.HTTP_400_BAD_REQUEST
         )
-    
+
     operation_type = serializer.validated_data['operation_type']
     amount = serializer.validated_data['amount']
-    
+
     try:
-        # Используем select_for_update для блокировки строки
-        # и предотвращения race conditions
+        # Use select_for_update to lock row and prevent race conditions
         with transaction.atomic():
-            # Проверяем существование кошелька и блокируем для обновления
+            # Check wallet existence and lock for update
             try:
                 wallet = Wallet.objects.select_for_update().get(
                     id=wallet_uuid
@@ -73,7 +74,7 @@ def wallet_operation(request, wallet_uuid):
                     status=status.HTTP_404_NOT_FOUND
                 )
 
-            # Выполняем операцию
+            # Execute operation
             if operation_type == 'DEPOSIT':
                 wallet.balance += amount
                 logger.info(
@@ -98,13 +99,14 @@ def wallet_operation(request, wallet_uuid):
             
             wallet.save()
 
-            # Сохраняем операцию в историю
+            # Save operation to history for audit trail
             WalletOperation.objects.create(
                 wallet=wallet,
                 operation_type=operation_type,
                 amount=amount
             )
 
+        # Return updated wallet data
         serializer_wallet = WalletSerializer(wallet)
         return Response(
             serializer_wallet.data,
@@ -112,6 +114,7 @@ def wallet_operation(request, wallet_uuid):
         )
 
     except Exception as e:
+        # Log unexpected errors and return generic error message
         logger.error(
             f"Error processing operation for wallet {wallet_uuid}: "
             f"{str(e)}",

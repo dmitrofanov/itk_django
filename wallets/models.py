@@ -7,9 +7,7 @@ from django.db import models
 
 
 class Wallet(models.Model):
-    """
-    Модель кошелька с балансом.
-    """
+    """Wallet model with balance."""
     id = models.UUIDField(
         primary_key=True,
         default=uuid.uuid4,
@@ -26,10 +24,11 @@ class Wallet(models.Model):
 
     class Meta:
         db_table = 'wallets'
+        # Order by creation date, newest first
         ordering = ['-created_at']
 
     def clean(self):
-        """Валидация на уровне модели."""
+        """Validate model-level constraints."""
         if self.balance < 0:
             raise ValidationError({
                 'balance': 'Balance cannot be negative'
@@ -40,16 +39,19 @@ class Wallet(models.Model):
 
 
 class WalletOperation(models.Model):
-    """
-    Модель для хранения истории операций с кошельком.
-    """
+    """Model for storing wallet operation history."""
+    # Available operation types
     OPERATION_TYPES = [
         ('DEPOSIT', 'Deposit'),
         ('WITHDRAW', 'Withdraw'),
     ]
 
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    # Индекс для быстрого поиска операций по кошельку
+    id = models.UUIDField(
+        primary_key=True,
+        default=uuid.uuid4,
+        editable=False
+    )
+    # Index for fast wallet operations lookup
     wallet = models.ForeignKey(
         Wallet,
         on_delete=models.CASCADE,
@@ -60,7 +62,7 @@ class WalletOperation(models.Model):
         max_length=10,
         choices=OPERATION_TYPES
     )
-    # Минимальная сумма операции
+    # Minimum operation amount
     amount = models.DecimalField(
         max_digits=20,
         decimal_places=2,
@@ -70,10 +72,11 @@ class WalletOperation(models.Model):
 
     class Meta:
         db_table = 'wallet_operations'
+        # Order by creation date, newest first
         ordering = ['-created_at']
 
     def clean(self):
-        """Валидация на уровне модели."""
+        """Validate model-level constraints."""
         if self.amount <= 0:
             raise ValidationError({
                 'amount': 'Amount must be greater than zero'

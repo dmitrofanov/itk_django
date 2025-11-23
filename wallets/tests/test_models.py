@@ -7,44 +7,46 @@ from wallets.models import Wallet, WalletOperation
 
 
 class WalletModelTest(TestCase):
-    """Тесты для модели Wallet"""
-    
+    """Tests for Wallet model."""
+
     def test_wallet_creation(self):
-        """Тест создания кошелька с дефолтным балансом"""
+        """Test wallet creation with default balance."""
         wallet = Wallet.objects.create()
         self.assertEqual(wallet.balance, Decimal('0.00'))
         self.assertIsNotNone(wallet.id)
         self.assertIsNotNone(wallet.created_at)
         self.assertIsNotNone(wallet.updated_at)
-    
+
     def test_wallet_creation_with_balance(self):
-        """Тест создания кошелька с указанным балансом"""
+        """Test wallet creation with specified balance."""
         wallet = Wallet.objects.create(balance=Decimal('1000.50'))
         self.assertEqual(wallet.balance, Decimal('1000.50'))
-    
+
     def test_wallet_str_representation(self):
-        """Тест строкового представления кошелька"""
+        """Test wallet string representation."""
         wallet = Wallet.objects.create(balance=Decimal('500.00'))
         str_repr = str(wallet)
         self.assertIn(str(wallet.id), str_repr)
         self.assertIn('500.00', str_repr)
-    
+
     def test_wallet_clean_negative_balance(self):
-        """Тест валидации отрицательного баланса"""
+        """Test negative balance validation."""
         wallet = Wallet(balance=Decimal('-100.00'))
         with self.assertRaises(ValidationError):
             wallet.clean()
-    
+
     def test_wallet_clean_zero_balance(self):
-        """Тест валидации нулевого баланса (должен быть валидным)"""
+        """Test zero balance validation (should be valid)."""
         wallet = Wallet(balance=Decimal('0.00'))
         try:
             wallet.clean()
         except ValidationError:
-            self.fail("clean() raised ValidationError unexpectedly for zero balance")
-    
+            self.fail(
+                "clean() raised ValidationError unexpectedly for zero balance"
+            )
+
     def test_wallet_clean_positive_balance(self):
-        """Тест валидации положительного баланса"""
+        """Test positive balance validation."""
         wallet = Wallet(balance=Decimal('100.00'))
         try:
             wallet.clean()
@@ -53,14 +55,14 @@ class WalletModelTest(TestCase):
 
 
 class WalletOperationModelTest(TestCase):
-    """Тесты для модели WalletOperation"""
-    
+    """Tests for WalletOperation model."""
+
     def setUp(self):
-        """Создаем кошелек для тестов"""
+        """Set up wallet for tests."""
         self.wallet = Wallet.objects.create(balance=Decimal('1000.00'))
-    
+
     def test_operation_creation_deposit(self):
-        """Тест создания операции DEPOSIT"""
+        """Test DEPOSIT operation creation."""
         operation = WalletOperation.objects.create(
             wallet=self.wallet,
             operation_type='DEPOSIT',
@@ -71,9 +73,9 @@ class WalletOperationModelTest(TestCase):
         self.assertEqual(operation.amount, Decimal('100.00'))
         self.assertIsNotNone(operation.id)
         self.assertIsNotNone(operation.created_at)
-    
+
     def test_operation_creation_withdraw(self):
-        """Тест создания операции WITHDRAW"""
+        """Test WITHDRAW operation creation."""
         operation = WalletOperation.objects.create(
             wallet=self.wallet,
             operation_type='WITHDRAW',
@@ -84,9 +86,9 @@ class WalletOperationModelTest(TestCase):
         self.assertEqual(operation.amount, Decimal('200.00'))
         self.assertIsNotNone(operation.id)
         self.assertIsNotNone(operation.created_at)
-    
+
     def test_operation_str_representation(self):
-        """Тест строкового представления операции"""
+        """Test operation string representation."""
         operation = WalletOperation.objects.create(
             wallet=self.wallet,
             operation_type='DEPOSIT',
@@ -96,9 +98,9 @@ class WalletOperationModelTest(TestCase):
         self.assertIn('DEPOSIT', str_repr)
         self.assertIn('150.00', str_repr)
         self.assertIn(str(self.wallet.id), str_repr)
-    
+
     def test_operation_clean_zero_amount(self):
-        """Тест валидации нулевой суммы операции"""
+        """Test zero amount validation."""
         operation = WalletOperation(
             wallet=self.wallet,
             operation_type='DEPOSIT',
@@ -106,9 +108,9 @@ class WalletOperationModelTest(TestCase):
         )
         with self.assertRaises(ValidationError):
             operation.clean()
-    
+
     def test_operation_clean_negative_amount(self):
-        """Тест валидации отрицательной суммы операции"""
+        """Test negative amount validation."""
         operation = WalletOperation(
             wallet=self.wallet,
             operation_type='DEPOSIT',
@@ -116,9 +118,9 @@ class WalletOperationModelTest(TestCase):
         )
         with self.assertRaises(ValidationError):
             operation.clean()
-    
+
     def test_operation_clean_positive_amount(self):
-        """Тест валидации положительной суммы операции"""
+        """Test positive amount validation."""
         operation = WalletOperation(
             wallet=self.wallet,
             operation_type='DEPOSIT',
@@ -127,10 +129,13 @@ class WalletOperationModelTest(TestCase):
         try:
             operation.clean()
         except ValidationError:
-            self.fail("clean() raised ValidationError unexpectedly for positive amount")
-    
+            self.fail(
+                "clean() raised ValidationError unexpectedly "
+                "for positive amount"
+            )
+
     def test_operation_related_name(self):
-        """Тест связи operations через related_name"""
+        """Test operations relationship via related_name."""
         WalletOperation.objects.create(
             wallet=self.wallet,
             operation_type='DEPOSIT',
@@ -141,21 +146,23 @@ class WalletOperationModelTest(TestCase):
             operation_type='WITHDRAW',
             amount=Decimal('50.00')
         )
-        
+
         operations = self.wallet.operations.all()
         self.assertEqual(operations.count(), 2)
-    
+
     def test_operation_cascade_delete(self):
-        """Тест каскадного удаления операций при удалении кошелька"""
+        """Test cascade deletion of operations when wallet is deleted."""
         WalletOperation.objects.create(
             wallet=self.wallet,
             operation_type='DEPOSIT',
             amount=Decimal('100.00')
         )
-        
+
         wallet_id = self.wallet.id
         self.wallet.delete()
-        
-        # Проверяем, что операция тоже удалена
-        self.assertFalse(WalletOperation.objects.filter(wallet_id=wallet_id).exists())
+
+        # Check operation is also deleted
+        self.assertFalse(
+            WalletOperation.objects.filter(wallet_id=wallet_id).exists()
+        )
 

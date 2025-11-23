@@ -1,52 +1,52 @@
 # Wallet API Service
 
-REST API сервис для управления балансом кошельков.
+REST API service for wallet balance management.
 
-## Возможности
+## Features
 
-- **GET** `/api/v1/wallets/{WALLET_UUID}` - получение информации о кошельке и текущем балансе
-- **POST** `/api/v1/wallets/{WALLET_UUID}/operation` - выполнение операций DEPOSIT (пополнение) или WITHDRAW (снятие)
+- **GET** `/api/v1/wallets/{WALLET_UUID}` - get wallet information and current balance
+- **POST** `/api/v1/wallets/{WALLET_UUID}/operation` - execute DEPOSIT (add) or WITHDRAW (subtract) operations
 
-## Технологии
+## Technologies
 
-- Django 4.2.7
+- Django 5.2.8
 - Django REST Framework
 - PostgreSQL
 - Docker & Docker Compose
 
-## Установка и запуск
+## Installation and Setup
 
-### Требования
+### Requirements
 
 - Docker
 - Docker Compose
 
-### Запуск проекта
+### Running the Project
 
-1. Клонируйте репозиторий
-2. (Опционально) Создайте файл `.env` на основе `env.example` для настройки переменных окружения:
+1. Clone the repository
+2. (Optional) Create `.env` file based on `env.example` for environment variables:
    ```bash
    cp env.example .env
    ```
    
-   Или создайте файл `.env` вручную с нужными значениями. Если файл `.env` не создан, будут использованы значения по умолчанию из `docker-compose.yml`.
+   Or create `.env` manually with required values. If `.env` is not created, default values from `docker-compose.yml` will be used.
 
-3. Запустите проект:
+3. Start the project:
    ```bash
    docker-compose up --build
    ```
 
-4. Приложение будет доступно по адресу: `http://localhost:8000`
+4. Application will be available at: `http://localhost:3000`
 
-## Использование API
+## API Usage
 
-### Получение информации о кошельке
+### Get Wallet Information
 
 ```bash
 GET /api/v1/wallets/{WALLET_UUID}
 ```
 
-**Пример ответа:**
+**Example response:**
 ```json
 {
     "id": "123e4567-e89b-12d3-a456-426614174000",
@@ -56,7 +56,7 @@ GET /api/v1/wallets/{WALLET_UUID}
 }
 ```
 
-### Выполнение операции
+### Execute Operation
 
 ```bash
 POST /api/v1/wallets/{WALLET_UUID}/operation
@@ -68,11 +68,11 @@ Content-Type: application/json
 }
 ```
 
-**Операции:**
-- `DEPOSIT` - пополнение баланса
-- `WITHDRAW` - снятие с баланса
+**Operations:**
+- `DEPOSIT` - add to balance
+- `WITHDRAW` - subtract from balance
 
-**Пример ответа:**
+**Example response:**
 ```json
 {
     "id": "123e4567-e89b-12d3-a456-426614174000",
@@ -82,82 +82,82 @@ Content-Type: application/json
 }
 ```
 
-## Тестирование
+## Testing
 
-Проект включает комплексный набор тестов, покрывающий все основные компоненты:
+The project includes comprehensive test suite covering all main components:
 
-### Запуск тестов
+### Running Tests
 
-**В Docker контейнере:**
+**In Docker container:**
 ```bash
 docker-compose exec web python manage.py test
 ```
 
-**Локально (если настроена база данных):**
+**Locally (if database is configured):**
 ```bash
 python manage.py test
 ```
 
-### Покрытие тестами
+### Test Coverage
 
-- **Модели** (`test_models.py`):
-  - Создание и валидация кошельков
-  - Создание и валидация операций
-  - Связи между моделями
-  - Каскадное удаление
+- **Models** (`test_models.py`):
+  - Wallet and operation creation
+  - Data validation
+  - Model relationships
+  - Cascade deletion
 
-- **Сериализаторы** (`test_serializers.py`):
-  - Валидация данных операций
-  - Проверка типов операций
-  - Валидация сумм (положительные, отрицательные, нулевые)
+- **Serializers** (`test_serializers.py`):
+  - Operation data validation
+  - Operation type validation
+  - Amount validation (positive, negative, zero)
 
 - **API Endpoints** (`test_views.py`):
-  - GET `/api/v1/wallets/{uuid}` - получение кошелька
-  - POST `/api/v1/wallets/{uuid}/operation` - операции DEPOSIT и WITHDRAW
-  - Обработка ошибок (404, 400, 405)
-  - Валидация входных данных
-  - Последовательность операций
+  - GET `/api/v1/wallets/{uuid}` - get wallet
+  - POST `/api/v1/wallets/{uuid}/operation` - DEPOSIT and WITHDRAW operations
+  - Error handling (404, 400, 405)
+  - Input validation
+  - Operation sequences
 
-- **Конкурентные операции** (`test_concurrent.py`):
-  - Одновременные DEPOSIT операции
-  - Одновременные WITHDRAW операции
-  - Смешанные операции
-  - Предотвращение race conditions
-  - Обработка недостаточного баланса при конкурентных запросах
+- **Concurrent Operations** (`test_concurrent.py`):
+  - Simultaneous DEPOSIT operations
+  - Simultaneous WITHDRAW operations
+  - Mixed operations
+  - Race condition prevention
+  - Insufficient balance handling in concurrent requests
 
-### Запуск конкретных тестов
+### Running Specific Tests
 
 ```bash
-# Все тесты
+# All tests
 python manage.py test
 
-# Конкретный тест-класс
+# Specific test class
 python manage.py test wallets.tests.test_views.WalletDetailViewTest
 
-# Конкретный тест
+# Specific test
 python manage.py test wallets.tests.test_views.WalletDetailViewTest.test_get_existing_wallet
 
-# Тесты с подробным выводом
+# Verbose output
 python manage.py test --verbosity=2
 ```
 
-## Особенности реализации
+## Implementation Details
 
-- Использование `select_for_update()` для предотвращения race conditions при конкурентных запросах
-- Транзакции для обеспечения атомарности операций
-- История операций сохраняется в таблице `WalletOperation`
-- Подготовлена структура для будущей версии API v2
-- Комплексное тестовое покрытие всех компонентов системы
+- Uses `select_for_update()` to prevent race conditions in concurrent requests
+- Transactions ensure operation atomicity
+- Operation history stored in `WalletOperation` table
+- Structure prepared for future API v2 version
+- Comprehensive test coverage for all system components
 
-## Структура проекта
+## Project Structure
 
 ```
 itk_django/
-├── wallet_api/          # Основной проект Django
+├── wallet_api/          # Main Django project
 │   ├── settings.py
 │   ├── urls.py
 │   └── ...
-├── wallets/             # Приложение для работы с кошельками
+├── wallets/             # Wallet management app
 │   ├── models.py
 │   ├── views.py
 │   ├── serializers.py
@@ -167,5 +167,3 @@ itk_django/
 ├── requirements.txt
 └── manage.py
 ```
-
-

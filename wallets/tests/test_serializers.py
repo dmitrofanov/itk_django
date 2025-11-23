@@ -11,14 +11,14 @@ from wallets.serializers import (
 
 
 class WalletSerializerTest(TestCase):
-    """Тесты для WalletSerializer"""
-    
+    """Tests for WalletSerializer."""
+
     def setUp(self):
-        """Создаем кошелек для тестов"""
+        """Set up wallet for tests."""
         self.wallet = Wallet.objects.create(balance=Decimal('1000.00'))
-    
+
     def test_wallet_serialization(self):
-        """Тест сериализации кошелька"""
+        """Test wallet serialization."""
         serializer = WalletSerializer(self.wallet)
         data = serializer.data
         
@@ -28,33 +28,33 @@ class WalletSerializerTest(TestCase):
         self.assertIn('updated_at', data)
     
     def test_wallet_serializer_read_only_fields(self):
-        """Тест, что поля id, created_at, updated_at только для чтения"""
+        """Test that id, created_at, updated_at fields are read-only."""
         serializer = WalletSerializer(self.wallet)
-        
-        # Пытаемся изменить read-only поля (они должны игнорироваться)
+
+        # Read-only fields should be ignored on update
         data = serializer.data
         self.assertIn('id', data)
         self.assertIn('created_at', data)
         self.assertIn('updated_at', data)
     
     def test_wallet_serializer_validate_negative_balance(self):
-        """Тест валидации отрицательного баланса"""
+        """Test negative balance validation."""
         serializer = WalletSerializer()
         with self.assertRaises(DRFValidationError):
             serializer.validate_balance(Decimal('-100.00'))
-    
+
     def test_wallet_serializer_validate_positive_balance(self):
-        """Тест валидации положительного баланса"""
+        """Test positive balance validation."""
         serializer = WalletSerializer()
         result = serializer.validate_balance(Decimal('100.00'))
         self.assertEqual(result, Decimal('100.00'))
 
 
 class WalletOperationSerializerTest(TestCase):
-    """Тесты для WalletOperationSerializer"""
-    
+    """Tests for WalletOperationSerializer."""
+
     def test_valid_deposit_operation(self):
-        """Тест валидной операции DEPOSIT"""
+        """Test valid DEPOSIT operation."""
         data = {
             'operation_type': 'DEPOSIT',
             'amount': '100.00'
@@ -65,7 +65,7 @@ class WalletOperationSerializerTest(TestCase):
         self.assertEqual(serializer.validated_data['amount'], Decimal('100.00'))
     
     def test_valid_withdraw_operation(self):
-        """Тест валидной операции WITHDRAW"""
+        """Test valid WITHDRAW operation."""
         data = {
             'operation_type': 'WITHDRAW',
             'amount': '50.00'
@@ -76,7 +76,7 @@ class WalletOperationSerializerTest(TestCase):
         self.assertEqual(serializer.validated_data['amount'], Decimal('50.00'))
     
     def test_invalid_operation_type(self):
-        """Тест невалидного типа операции"""
+        """Test invalid operation type."""
         data = {
             'operation_type': 'INVALID',
             'amount': '100.00'
@@ -86,7 +86,7 @@ class WalletOperationSerializerTest(TestCase):
         self.assertIn('operation_type', serializer.errors)
     
     def test_missing_operation_type(self):
-        """Тест отсутствующего типа операции"""
+        """Test missing operation type."""
         data = {
             'amount': '100.00'
         }
@@ -95,7 +95,7 @@ class WalletOperationSerializerTest(TestCase):
         self.assertIn('operation_type', serializer.errors)
     
     def test_missing_amount(self):
-        """Тест отсутствующей суммы"""
+        """Test missing amount."""
         data = {
             'operation_type': 'DEPOSIT'
         }
@@ -104,7 +104,7 @@ class WalletOperationSerializerTest(TestCase):
         self.assertIn('amount', serializer.errors)
     
     def test_zero_amount(self):
-        """Тест нулевой суммы"""
+        """Test zero amount."""
         data = {
             'operation_type': 'DEPOSIT',
             'amount': '0.00'
@@ -114,7 +114,7 @@ class WalletOperationSerializerTest(TestCase):
         self.assertIn('amount', serializer.errors)
     
     def test_negative_amount(self):
-        """Тест отрицательной суммы"""
+        """Test negative amount."""
         data = {
             'operation_type': 'DEPOSIT',
             'amount': '-10.00'
@@ -124,7 +124,7 @@ class WalletOperationSerializerTest(TestCase):
         self.assertIn('amount', serializer.errors)
     
     def test_minimum_amount(self):
-        """Тест минимальной суммы (0.01)"""
+        """Test minimum amount (0.01)."""
         data = {
             'operation_type': 'DEPOSIT',
             'amount': '0.01'
@@ -133,7 +133,7 @@ class WalletOperationSerializerTest(TestCase):
         self.assertTrue(serializer.is_valid())
     
     def test_large_amount(self):
-        """Тест большой суммы"""
+        """Test large amount."""
         data = {
             'operation_type': 'DEPOSIT',
             'amount': '999999999999999999.99'
@@ -142,26 +142,26 @@ class WalletOperationSerializerTest(TestCase):
         self.assertTrue(serializer.is_valid())
     
     def test_decimal_precision_valid(self):
-        """Тест валидной точности десятичных знаков (2 знака)."""
+        """Test valid decimal precision (2 decimal places)."""
         data = {
             'operation_type': 'DEPOSIT',
-            'amount': '100.12'  # Ровно 2 знака после запятой
+            'amount': '100.12'  # Exactly 2 decimal places
         }
         serializer = WalletOperationSerializer(data=data)
         self.assertTrue(serializer.is_valid())
-        # Проверяем, что значение корректно обработано
+        # Check value is correctly processed
         amount = serializer.validated_data['amount']
         self.assertIsInstance(amount, Decimal)
         self.assertEqual(amount, Decimal('100.12'))
 
     def test_decimal_precision_invalid(self):
-        """Тест невалидной точности десятичных знаков (>2 знаков)."""
+        """Test invalid decimal precision (>2 decimal places)."""
         data = {
             'operation_type': 'DEPOSIT',
-            'amount': '100.123'  # Больше 2 знаков после запятой
+            'amount': '100.123'  # More than 2 decimal places
         }
         serializer = WalletOperationSerializer(data=data)
-        # DecimalField должен отклонить значение с более чем 2 знаками
+        # DecimalField should reject values with more than 2 decimal places
         self.assertFalse(serializer.is_valid())
         self.assertIn('amount', serializer.errors)
 
