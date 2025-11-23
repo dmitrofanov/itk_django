@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   db:
     image: postgres:15-alpine
@@ -20,12 +18,13 @@ services:
   web:
     build: .
     command: sh -c "/wait-for-db.sh db python manage.py migrate && python manage.py runserver 0.0.0.0:8000"
+    # command: sh -c "/wait-for-db.sh db python manage.py migrate && gunicorn --bind 0.0.0.0:8000 --workers 3 wallet_api.wsgi:application"
     volumes:
       - .:/app
     ports:
-      - "8000:8000"
+      - "3000:8000"
     environment:
-      - DEBUG=${DEBUG:-1}
+      - DEBUG=${DEBUG:-True}
       - POSTGRES_DB=${POSTGRES_DB:-wallet_db}
       - POSTGRES_USER=${POSTGRES_USER:-wallet_user}
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-wallet_password}
