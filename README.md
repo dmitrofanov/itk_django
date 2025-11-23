@@ -28,12 +28,12 @@ REST API service for wallet balance management.
 
 1. Clone the repository
 
-2. (Optional) Create `.env` file based on `env.example` for environment variables:
+2. Create `.env` file based on `env.example` for environment variables:
    ```bash
    cp env.example .env
    ```
    
-   Or create `.env` manually with required values. If `.env` is not created, default values from `docker-compose.yml` will be used.
+   Or create `.env` manually with required values.
 
 3. Start the project:
    ```bash
