@@ -1,8 +1,13 @@
 from decimal import Decimal
+
 from django.test import TestCase
 from rest_framework.exceptions import ValidationError as DRFValidationError
+
 from wallets.models import Wallet
-from wallets.serializers import WalletSerializer, WalletOperationSerializer
+from wallets.serializers import (
+    WalletOperationSerializer,
+    WalletSerializer
+)
 
 
 class WalletSerializerTest(TestCase):
@@ -136,17 +141,27 @@ class WalletOperationSerializerTest(TestCase):
         serializer = WalletOperationSerializer(data=data)
         self.assertTrue(serializer.is_valid())
     
-    def test_decimal_precision(self):
-        """Тест точности десятичных знаков"""
+    def test_decimal_precision_valid(self):
+        """Тест валидной точности десятичных знаков (2 знака)."""
+        data = {
+            'operation_type': 'DEPOSIT',
+            'amount': '100.12'  # Ровно 2 знака после запятой
+        }
+        serializer = WalletOperationSerializer(data=data)
+        self.assertTrue(serializer.is_valid())
+        # Проверяем, что значение корректно обработано
+        amount = serializer.validated_data['amount']
+        self.assertIsInstance(amount, Decimal)
+        self.assertEqual(amount, Decimal('100.12'))
+
+    def test_decimal_precision_invalid(self):
+        """Тест невалидной точности десятичных знаков (>2 знаков)."""
         data = {
             'operation_type': 'DEPOSIT',
             'amount': '100.123'  # Больше 2 знаков после запятой
         }
         serializer = WalletOperationSerializer(data=data)
-        # DecimalField округлит до 2 знаков
-        if serializer.is_valid():
-            # Проверяем, что значение корректно обработано
-            amount = serializer.validated_data['amount']
-            self.assertIsInstance(amount, Decimal)
-            self.assertEqual(amount, Decimal('100.12'))
+        # DecimalField должен отклонить значение с более чем 2 знаками
+        self.assertFalse(serializer.is_valid())
+        self.assertIn('amount', serializer.errors)
 

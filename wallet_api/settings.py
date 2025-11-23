@@ -15,14 +15,24 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/4.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = os.getenv('SECRET_KEY', 'django-insecure-change-this-in-production')
+SECRET_KEY = os.getenv(
+    'SECRET_KEY',
+    'django-insecure-change-this-in-production'
+)
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = os.getenv('DEBUG', 'False') == 'True'
 
 # ALLOWED_HOSTS должен быть списком, даже если переменная не установлена
 allowed_hosts_str = os.getenv('DJANGO_ALLOWED_HOSTS', '*')
-ALLOWED_HOSTS = [host.strip() for host in allowed_hosts_str.split(',') if host.strip()] if allowed_hosts_str != '*' else ['*']
+if allowed_hosts_str != '*':
+    ALLOWED_HOSTS = [
+        host.strip()
+        for host in allowed_hosts_str.split(',')
+        if host.strip()
+    ]
+else:
+    ALLOWED_HOSTS = ['*']
 
 
 # Application definition
@@ -89,7 +99,10 @@ DATABASES = {
 
 AUTH_PASSWORD_VALIDATORS = [
     {
-        'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator',
+        'NAME': (
+            'django.contrib.auth.password_validation.'
+            'UserAttributeSimilarityValidator'
+        ),
     },
     {
         'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator',
@@ -138,10 +151,24 @@ REST_FRAMEWORK = {
 
 # CORS и CSRF настройки - фильтруем пустые значения
 cors_origins = os.environ.get('CORS_ALLOWED_ORIGINS', '')
-CORS_ALLOWED_ORIGINS = [origin.strip() for origin in cors_origins.split(',') if origin.strip()] if cors_origins else []
+if cors_origins:
+    CORS_ALLOWED_ORIGINS = [
+        origin.strip()
+        for origin in cors_origins.split(',')
+        if origin.strip()
+    ]
+else:
+    CORS_ALLOWED_ORIGINS = []
 
 csrf_origins = os.environ.get('CSRF_TRUSTED_ORIGINS', '')
-CSRF_TRUSTED_ORIGINS = [origin.strip() for origin in csrf_origins.split(',') if origin.strip()] if csrf_origins else []
+if csrf_origins:
+    CSRF_TRUSTED_ORIGINS = [
+        origin.strip()
+        for origin in csrf_origins.split(',')
+        if origin.strip()
+    ]
+else:
+    CSRF_TRUSTED_ORIGINS = []
 
 LOGGING = {
     'version': 1,
@@ -159,7 +186,8 @@ LOGGING = {
         },
         'django.db.backends': {
             'handlers': ['console'],
-            'level': 'WARNING' if not DEBUG else 'DEBUG',  # DEBUG уровень только в development
+            # DEBUG уровень только в development
+            'level': 'WARNING' if not DEBUG else 'DEBUG',
             'propagate': False,
         },
         'wallets': {

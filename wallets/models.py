@@ -1,18 +1,23 @@
-from django.db import models
+import uuid
+from decimal import Decimal
+
 from django.core.exceptions import ValidationError
 from django.core.validators import MinValueValidator
-from decimal import Decimal
-import uuid
+from django.db import models
 
 
 class Wallet(models.Model):
     """
     Модель кошелька с балансом.
     """
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    id = models.UUIDField(
+        primary_key=True,
+        default=uuid.uuid4,
+        editable=False
+    )
     balance = models.DecimalField(
-        max_digits=20, 
-        decimal_places=2, 
+        max_digits=20,
+        decimal_places=2,
         default=Decimal('0.00'),
         validators=[MinValueValidator(Decimal('0.00'))]
     )
@@ -24,9 +29,11 @@ class Wallet(models.Model):
         ordering = ['-created_at']
 
     def clean(self):
-        """Валидация на уровне модели"""
+        """Валидация на уровне модели."""
         if self.balance < 0:
-            raise ValidationError({'balance': 'Balance cannot be negative'})
+            raise ValidationError({
+                'balance': 'Balance cannot be negative'
+            })
 
     def __str__(self):
         return f"Wallet {self.id} - Balance: {self.balance}"
@@ -42,17 +49,22 @@ class WalletOperation(models.Model):
     ]
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    # Индекс для быстрого поиска операций по кошельку
     wallet = models.ForeignKey(
-        Wallet, 
-        on_delete=models.CASCADE, 
+        Wallet,
+        on_delete=models.CASCADE,
         related_name='operations',
-        db_index=True  # Индекс для быстрого поиска операций по кошельку
+        db_index=True
     )
-    operation_type = models.CharField(max_length=10, choices=OPERATION_TYPES)
+    operation_type = models.CharField(
+        max_length=10,
+        choices=OPERATION_TYPES
+    )
+    # Минимальная сумма операции
     amount = models.DecimalField(
-        max_digits=20, 
+        max_digits=20,
         decimal_places=2,
-        validators=[MinValueValidator(Decimal('0.01'))]  # Минимальная сумма операции
+        validators=[MinValueValidator(Decimal('0.01'))]
     )
     created_at = models.DateTimeField(auto_now_add=True)
 
@@ -61,9 +73,11 @@ class WalletOperation(models.Model):
         ordering = ['-created_at']
 
     def clean(self):
-        """Валидация на уровне модели"""
+        """Валидация на уровне модели."""
         if self.amount <= 0:
-            raise ValidationError({'amount': 'Amount must be greater than zero'})
+            raise ValidationError({
+                'amount': 'Amount must be greater than zero'
+            })
 
     def __str__(self):
         return f"{self.operation_type} {self.amount} for wallet {self.wallet.id}"

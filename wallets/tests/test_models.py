@@ -1,6 +1,8 @@
 from decimal import Decimal
-from django.test import TestCase
+
 from django.core.exceptions import ValidationError
+from django.test import TestCase
+
 from wallets.models import Wallet, WalletOperation
 
 

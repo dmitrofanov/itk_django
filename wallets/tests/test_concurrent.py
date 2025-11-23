@@ -1,10 +1,12 @@
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from decimal import Decimal
+
+from django.db import connections
 from django.test import TransactionTestCase
 from django.urls import reverse
-from django.db import connections
-from rest_framework.test import APIClient
 from rest_framework import status
-from concurrent.futures import ThreadPoolExecutor, as_completed
+from rest_framework.test import APIClient
+
 from wallets.models import Wallet, WalletOperation
 
 
