@@ -11,7 +11,7 @@ from .serializers import (
     WalletOperationSerializer,
     WalletSerializer
 )
-from .services import WalletService
+from .services import execute_wallet_operation
 
 # Logger for wallet operations
 logger = logging.getLogger('wallets')
@@ -62,7 +62,7 @@ def wallet_operation(request, wallet_uuid):
 
     try:
         # Execute operation using service layer
-        wallet = WalletService.execute_operation(
+        wallet = execute_wallet_operation(
             wallet_uuid=wallet_uuid,
             operation_type=operation_type,
             amount=amount

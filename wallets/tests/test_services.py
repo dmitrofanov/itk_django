@@ -5,11 +5,11 @@ from django.core.exceptions import ValidationError
 from django.test import TestCase
 
 from wallets.models import Wallet, WalletOperation
-from wallets.services import WalletService
+from wallets.services import execute_wallet_operation
 
 
 class WalletServiceTest(TestCase):
-    """Tests for WalletService."""
+    """Tests for execute_wallet_operation function."""
 
     def setUp(self):
         """Set up test wallet."""
@@ -23,7 +23,7 @@ class WalletServiceTest(TestCase):
         expected_balance = initial_balance + deposit_amount
 
         # Execute deposit
-        updated_wallet = WalletService.execute_operation(
+        updated_wallet = execute_wallet_operation(
             wallet_uuid=self.wallet_uuid,
             operation_type='DEPOSIT',
             amount=deposit_amount
@@ -53,7 +53,7 @@ class WalletServiceTest(TestCase):
         expected_balance = initial_balance - withdraw_amount
 
         # Execute withdraw
-        updated_wallet = WalletService.execute_operation(
+        updated_wallet = execute_wallet_operation(
             wallet_uuid=self.wallet_uuid,
             operation_type='WITHDRAW',
             amount=withdraw_amount
@@ -80,7 +80,7 @@ class WalletServiceTest(TestCase):
 
         # Should raise ValidationError
         with self.assertRaises(ValidationError) as context:
-            WalletService.execute_operation(
+            execute_wallet_operation(
                 wallet_uuid=self.wallet_uuid,
                 operation_type='WITHDRAW',
                 amount=withdraw_amount
@@ -107,7 +107,7 @@ class WalletServiceTest(TestCase):
         expected_balance = Decimal('0.00')
 
         # Execute withdraw
-        WalletService.execute_operation(
+        execute_wallet_operation(
             wallet_uuid=self.wallet_uuid,
             operation_type='WITHDRAW',
             amount=withdraw_amount
@@ -124,7 +124,7 @@ class WalletServiceTest(TestCase):
 
         # Should raise Wallet.DoesNotExist
         with self.assertRaises(Wallet.DoesNotExist):
-            WalletService.execute_operation(
+            execute_wallet_operation(
                 wallet_uuid=fake_uuid,
                 operation_type='DEPOSIT',
                 amount=deposit_amount
@@ -136,7 +136,7 @@ class WalletServiceTest(TestCase):
 
         # Should raise ValueError
         with self.assertRaises(ValueError) as context:
-            WalletService.execute_operation(
+            execute_wallet_operation(
                 wallet_uuid=self.wallet_uuid,
                 operation_type='UNKNOWN',
                 amount=deposit_amount
@@ -162,7 +162,7 @@ class WalletServiceTest(TestCase):
 
         # Execute multiple deposits
         for amount in amounts:
-            WalletService.execute_operation(
+            execute_wallet_operation(
                 wallet_uuid=self.wallet_uuid,
                 operation_type='DEPOSIT',
                 amount=amount
@@ -186,7 +186,7 @@ class WalletServiceTest(TestCase):
 
         # Execute multiple withdraws
         for amount in amounts:
-            WalletService.execute_operation(
+            execute_wallet_operation(
                 wallet_uuid=self.wallet_uuid,
                 operation_type='WITHDRAW',
                 amount=amount
@@ -213,7 +213,7 @@ class WalletServiceTest(TestCase):
 
         # Execute operations
         for op_type, amount in operations:
-            WalletService.execute_operation(
+            execute_wallet_operation(
                 wallet_uuid=self.wallet_uuid,
                 operation_type=op_type,
                 amount=amount
@@ -236,7 +236,7 @@ class WalletServiceTest(TestCase):
         deposit_amount = Decimal('100.00')
 
         # Execute deposit
-        WalletService.execute_operation(
+        execute_wallet_operation(
             wallet_uuid=zero_wallet.id,
             operation_type='DEPOSIT',
             amount=deposit_amount
@@ -252,7 +252,7 @@ class WalletServiceTest(TestCase):
         initial_balance = self.wallet.balance
 
         # Execute deposit
-        WalletService.execute_operation(
+        execute_wallet_operation(
             wallet_uuid=self.wallet_uuid,
             operation_type='DEPOSIT',
             amount=deposit_amount
@@ -271,7 +271,7 @@ class WalletServiceTest(TestCase):
         initial_balance = self.wallet.balance
 
         # Execute deposit
-        WalletService.execute_operation(
+        execute_wallet_operation(
             wallet_uuid=self.wallet_uuid,
             operation_type='DEPOSIT',
             amount=deposit_amount
@@ -293,14 +293,14 @@ class WalletServiceTest(TestCase):
         )
 
         # Execute deposit
-        WalletService.execute_operation(
+        execute_wallet_operation(
             wallet_uuid=self.wallet_uuid,
             operation_type='DEPOSIT',
             amount=deposit_amount
         )
 
         # Execute withdraw
-        WalletService.execute_operation(
+        execute_wallet_operation(
             wallet_uuid=self.wallet_uuid,
             operation_type='WITHDRAW',
             amount=withdraw_amount
@@ -315,7 +315,7 @@ class WalletServiceTest(TestCase):
         deposit_amount = Decimal('250.00')
 
         # Execute operation
-        WalletService.execute_operation(
+        execute_wallet_operation(
             wallet_uuid=self.wallet_uuid,
             operation_type='DEPOSIT',
             amount=deposit_amount
@@ -338,7 +338,7 @@ class WalletServiceTest(TestCase):
 
         # Attempt withdraw that will fail
         with self.assertRaises(ValidationError):
-            WalletService.execute_operation(
+            execute_wallet_operation(
                 wallet_uuid=self.wallet_uuid,
                 operation_type='WITHDRAW',
                 amount=withdraw_amount

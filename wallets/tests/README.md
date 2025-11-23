@@ -24,8 +24,8 @@ Tests for API endpoints:
 - Response structure validation
 
 ### test_services.py
-Tests for service layer (`WalletService`):
-- `execute_operation` method - business logic testing
+Tests for service layer (`execute_wallet_operation` function):
+- `execute_wallet_operation` function - business logic testing
 - DEPOSIT operations
 - WITHDRAW operations
 - Error handling (insufficient balance, wallet not found, unknown operation type)
