@@ -45,12 +45,4 @@ class WalletOperationSerializer(serializers.Serializer):
         min_value=OPERATION_MIN_AMOUNT
     )
 
-    def validate_amount(self, value):
-        """Additional amount validation."""
-        if value < OPERATION_MIN_AMOUNT:
-            raise serializers.ValidationError(
-                "Amount must be greater than zero"
-            )
-        return value
-
 
