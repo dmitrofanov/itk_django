@@ -4,6 +4,7 @@ REST API service for wallet balance management.
 
 ## Features
 
+- JWT-based authentication using Djoser
 - **GET** `/api/v1/wallets/{WALLET_UUID}` - get wallet information and current balance
 - **POST** `/api/v1/wallets/{WALLET_UUID}/operation` - execute DEPOSIT (add) or WITHDRAW (subtract) operations
 
@@ -11,6 +12,8 @@ REST API service for wallet balance management.
 
 - Django 5.2.8
 - Django REST Framework
+- Djoser (authentication)
+- djangorestframework-simplejwt (JWT tokens)
 - PostgreSQL
 - Docker & Docker Compose
 
@@ -47,10 +50,61 @@ REST API service for wallet balance management.
 
 ## API Usage
 
+### Authentication
+
+All API endpoints require JWT authentication. First, obtain an access token:
+
+**Register a new user:**
+```bash
+POST /api/auth/users/
+Content-Type: application/json
+
+{
+    "username": "testuser",
+    "email": "test@example.com",
+    "password": "testpass123"
+}
+```
+
+**Obtain JWT token:**
+```bash
+POST /api/auth/token/
+Content-Type: application/json
+
+{
+    "username": "testuser",
+    "password": "testpass123"
+}
+```
+
+**Response:**
+```json
+{
+    "access": "eyJ0eXAiOiJKV1QiLCJhbGc...",
+    "refresh": "eyJ0eXAiOiJKV1QiLCJhbGc..."
+}
+```
+
+**Refresh token:**
+```bash
+POST /api/auth/token/refresh/
+Content-Type: application/json
+
+{
+    "refresh": "eyJ0eXAiOiJKV1QiLCJhbGc..."
+}
+```
+
+**Use token in requests:**
+```bash
+Authorization: Bearer eyJ0eXAiOiJKV1QiLCJhbGc...
+```
+
 ### Get Wallet Information
 
 ```bash
 GET /api/v1/wallets/{WALLET_UUID}
+Authorization: Bearer {ACCESS_TOKEN}
 ```
 
 **Example response:**
@@ -68,6 +122,7 @@ GET /api/v1/wallets/{WALLET_UUID}
 ```bash
 POST /api/v1/wallets/{WALLET_UUID}/operation
 Content-Type: application/json
+Authorization: Bearer {ACCESS_TOKEN}
 
 {
     "operation_type": "DEPOSIT",
@@ -150,6 +205,8 @@ python manage.py test --verbosity=2
 
 ## Implementation Details
 
+- JWT-based authentication using Djoser and djangorestframework-simplejwt
+- All API endpoints require authentication
 - Uses `select_for_update()` to prevent race conditions in concurrent requests
 - Transactions ensure operation atomicity
 - Operation history stored in `WalletOperation` table

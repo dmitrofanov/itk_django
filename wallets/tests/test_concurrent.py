@@ -1,13 +1,17 @@
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from decimal import Decimal
 
+from django.contrib.auth import get_user_model
 from django.db import connections
 from django.test import TransactionTestCase
 from django.urls import reverse
 from rest_framework import status
 from rest_framework.test import APIClient
+from rest_framework_simplejwt.tokens import RefreshToken
 
 from wallets.models import Wallet, WalletOperation
+
+User = get_user_model()
 
 
 class ConcurrentOperationsTest(TransactionTestCase):
@@ -22,9 +26,17 @@ class ConcurrentOperationsTest(TransactionTestCase):
 
     def setUp(self):
         """Set up test client and wallet."""
+        self.user = User.objects.create_user(
+            username='testuser',
+            email='test@example.com',
+            password='testpass123'
+        )
         self.wallet = Wallet.objects.create(balance=Decimal('1000.00'))
         # Store UUID for use in threads
         self.wallet_uuid = str(self.wallet.id)
+        # Get JWT token for authentication
+        refresh = RefreshToken.for_user(self.user)
+        self.access_token = str(refresh.access_token)
 
     def tearDown(self):
         """Close all DB connections after test."""
@@ -45,6 +57,7 @@ class ConcurrentOperationsTest(TransactionTestCase):
         def make_deposit():
             # Create separate client for each thread
             client = APIClient()
+            client.credentials(HTTP_AUTHORIZATION=f'Bearer {self.access_token}')
             try:
                 response = client.post(url, {
                     'operation_type': 'DEPOSIT',
@@ -90,6 +103,7 @@ class ConcurrentOperationsTest(TransactionTestCase):
 
         def make_withdraw():
             client = APIClient()
+            client.credentials(HTTP_AUTHORIZATION=f'Bearer {self.access_token}')
             try:
                 response = client.post(url, {
                     'operation_type': 'WITHDRAW',
@@ -129,6 +143,7 @@ class ConcurrentOperationsTest(TransactionTestCase):
 
         def make_deposit():
             client = APIClient()
+            client.credentials(HTTP_AUTHORIZATION=f'Bearer {self.access_token}')
             try:
                 response = client.post(url, {
                     'operation_type': 'DEPOSIT',
@@ -140,6 +155,7 @@ class ConcurrentOperationsTest(TransactionTestCase):
 
         def make_withdraw():
             client = APIClient()
+            client.credentials(HTTP_AUTHORIZATION=f'Bearer {self.access_token}')
             try:
                 response = client.post(url, {
                     'operation_type': 'WITHDRAW',
@@ -192,6 +208,7 @@ class ConcurrentOperationsTest(TransactionTestCase):
 
         def make_withdraw():
             client = APIClient()
+            client.credentials(HTTP_AUTHORIZATION=f'Bearer {self.access_token}')
             try:
                 response = client.post(url, {
                     'operation_type': 'WITHDRAW',
@@ -248,6 +265,7 @@ class ConcurrentOperationsTest(TransactionTestCase):
 
         def make_operation(operation_type):
             client = APIClient()
+            client.credentials(HTTP_AUTHORIZATION=f'Bearer {self.access_token}')
             try:
                 response = client.post(url, {
                     'operation_type': operation_type,

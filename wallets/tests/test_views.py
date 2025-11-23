@@ -1,21 +1,33 @@
 import uuid
 from decimal import Decimal
 
+from django.contrib.auth import get_user_model
 from django.test import TestCase
 from django.urls import reverse
 from rest_framework import status
 from rest_framework.test import APIClient
+from rest_framework_simplejwt.tokens import RefreshToken
 
 from wallets.models import Wallet, WalletOperation
+
+User = get_user_model()
 
 
 class WalletDetailViewTest(TestCase):
     """Tests for GET /api/v1/wallets/{uuid}."""
 
     def setUp(self):
-        """Set up test client."""
+        """Set up test client and user."""
         self.client = APIClient()
+        self.user = User.objects.create_user(
+            username='testuser',
+            email='test@example.com',
+            password='testpass123'
+        )
         self.wallet = Wallet.objects.create(balance=Decimal('1000.00'))
+        # Get JWT token for authentication
+        refresh = RefreshToken.for_user(self.user)
+        self.client.credentials(HTTP_AUTHORIZATION=f'Bearer {refresh.access_token}')
 
     def test_get_existing_wallet(self):
         """Test getting existing wallet."""
@@ -39,6 +51,14 @@ class WalletDetailViewTest(TestCase):
 
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
 
+    def test_get_wallet_unauthorized(self):
+        """Test getting wallet without authentication."""
+        client = APIClient()
+        url = reverse('wallets:wallet-detail', kwargs={'wallet_uuid': self.wallet.id})
+        response = client.get(url)
+        
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+
     def test_get_wallet_invalid_uuid_format(self):
         """Test getting wallet with invalid UUID format."""
         url = '/api/v1/wallets/invalid-uuid/'
@@ -60,7 +80,15 @@ class WalletOperationViewTest(TestCase):
     def setUp(self):
         """Set up test client and wallet."""
         self.client = APIClient()
+        self.user = User.objects.create_user(
+            username='testuser',
+            email='test@example.com',
+            password='testpass123'
+        )
         self.wallet = Wallet.objects.create(balance=Decimal('1000.00'))
+        # Get JWT token for authentication
+        refresh = RefreshToken.for_user(self.user)
+        self.client.credentials(HTTP_AUTHORIZATION=f'Bearer {refresh.access_token}')
 
     def test_deposit_operation_success(self):
         """Test successful DEPOSIT operation."""
@@ -314,4 +342,19 @@ class WalletOperationViewTest(TestCase):
         response = self.client.get(url)
         
         self.assertEqual(response.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
+
+    def test_operation_unauthorized(self):
+        """Test operation without authentication."""
+        client = APIClient()
+        url = reverse(
+            'wallets:wallet-operation',
+            kwargs={'wallet_uuid': self.wallet.id}
+        )
+        data = {
+            'operation_type': 'DEPOSIT',
+            'amount': '100.00'
+        }
+        response = client.post(url, data, format='json')
+        
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
 
