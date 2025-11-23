@@ -2,6 +2,12 @@ from decimal import Decimal
 
 from rest_framework import serializers
 
+from .constants import (
+    DECIMAL_MAX_DIGITS,
+    DECIMAL_PLACES,
+    OPERATION_MIN_AMOUNT,
+    WALLET_MIN_BALANCE,
+)
 from .models import Wallet, WalletOperation
 
 
@@ -16,7 +22,7 @@ class WalletSerializer(serializers.ModelSerializer):
 
     def validate_balance(self, value):
         """Validate balance (if used for update)."""
-        if value < 0:
+        if value < WALLET_MIN_BALANCE:
             raise serializers.ValidationError(
                 "Balance cannot be negative"
             )
@@ -34,14 +40,14 @@ class WalletOperationSerializer(serializers.Serializer):
         ]
     )
     amount = serializers.DecimalField(
-        max_digits=20,
-        decimal_places=2,
-        min_value=Decimal('0.01')
+        max_digits=DECIMAL_MAX_DIGITS,
+        decimal_places=DECIMAL_PLACES,
+        min_value=OPERATION_MIN_AMOUNT
     )
 
     def validate_amount(self, value):
         """Additional amount validation."""
-        if value <= 0:
+        if value < OPERATION_MIN_AMOUNT:
             raise serializers.ValidationError(
                 "Amount must be greater than zero"
             )

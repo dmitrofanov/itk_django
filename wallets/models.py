@@ -5,6 +5,15 @@ from django.core.exceptions import ValidationError
 from django.core.validators import MinValueValidator
 from django.db import models
 
+from .constants import (
+    DECIMAL_MAX_DIGITS,
+    DECIMAL_PLACES,
+    OPERATION_MIN_AMOUNT,
+    OPERATION_TYPE_MAX_LENGTH,
+    WALLET_DEFAULT_BALANCE,
+    WALLET_MIN_BALANCE,
+)
+
 
 class Wallet(models.Model):
     """Wallet model with balance."""
@@ -14,10 +23,10 @@ class Wallet(models.Model):
         editable=False
     )
     balance = models.DecimalField(
-        max_digits=20,
-        decimal_places=2,
-        default=Decimal('0.00'),
-        validators=[MinValueValidator(Decimal('0.00'))]
+        max_digits=DECIMAL_MAX_DIGITS,
+        decimal_places=DECIMAL_PLACES,
+        default=WALLET_DEFAULT_BALANCE,
+        validators=[MinValueValidator(WALLET_MIN_BALANCE)]
     )
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -29,7 +38,7 @@ class Wallet(models.Model):
 
     def clean(self):
         """Validate model-level constraints."""
-        if self.balance < 0:
+        if self.balance < WALLET_MIN_BALANCE:
             raise ValidationError({
                 'balance': 'Balance cannot be negative'
             })
@@ -59,14 +68,14 @@ class WalletOperation(models.Model):
         db_index=True
     )
     operation_type = models.CharField(
-        max_length=10,
+        max_length=OPERATION_TYPE_MAX_LENGTH,
         choices=OPERATION_TYPES
     )
     # Minimum operation amount
     amount = models.DecimalField(
-        max_digits=20,
-        decimal_places=2,
-        validators=[MinValueValidator(Decimal('0.01'))]
+        max_digits=DECIMAL_MAX_DIGITS,
+        decimal_places=DECIMAL_PLACES,
+        validators=[MinValueValidator(OPERATION_MIN_AMOUNT)]
     )
     created_at = models.DateTimeField(auto_now_add=True)
 
@@ -77,7 +86,7 @@ class WalletOperation(models.Model):
 
     def clean(self):
         """Validate model-level constraints."""
-        if self.amount <= 0:
+        if self.amount < OPERATION_MIN_AMOUNT:
             raise ValidationError({
                 'amount': 'Amount must be greater than zero'
             })
