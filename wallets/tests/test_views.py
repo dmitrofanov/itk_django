@@ -2,12 +2,17 @@ import uuid
 from decimal import Decimal
 
 from django.contrib.auth import get_user_model
+from django.core.cache import cache
 from django.test import TestCase
 from django.urls import reverse
 from rest_framework import status
 from rest_framework.test import APIClient
 from rest_framework_simplejwt.tokens import RefreshToken
 
+from wallets.constants import (
+    THROTTLE_READ_LIMIT,
+    THROTTLE_WRITE_LIMIT,
+)
 from wallets.models import Wallet, WalletOperation
 
 User = get_user_model()
@@ -18,6 +23,8 @@ class WalletDetailViewTest(TestCase):
 
     def setUp(self):
         """Set up test client and user."""
+        # Clear cache to avoid throttling issues between tests
+        cache.clear()
         self.client = APIClient()
         self.user = User.objects.create_user(
             username='testuser',
@@ -28,6 +35,11 @@ class WalletDetailViewTest(TestCase):
         # Get JWT token for authentication
         refresh = RefreshToken.for_user(self.user)
         self.client.credentials(HTTP_AUTHORIZATION=f'Bearer {refresh.access_token}')
+
+    def tearDown(self):
+        """Clean up after test."""
+        # Clear cache after each test
+        cache.clear()
 
     def test_get_existing_wallet(self):
         """Test getting existing wallet."""
@@ -79,6 +91,8 @@ class WalletOperationViewTest(TestCase):
 
     def setUp(self):
         """Set up test client and wallet."""
+        # Clear cache to avoid throttling issues between tests
+        cache.clear()
         self.client = APIClient()
         self.user = User.objects.create_user(
             username='testuser',
@@ -89,6 +103,11 @@ class WalletOperationViewTest(TestCase):
         # Get JWT token for authentication
         refresh = RefreshToken.for_user(self.user)
         self.client.credentials(HTTP_AUTHORIZATION=f'Bearer {refresh.access_token}')
+
+    def tearDown(self):
+        """Clean up after test."""
+        # Clear cache after each test
+        cache.clear()
 
     def test_deposit_operation_success(self):
         """Test successful DEPOSIT operation."""
@@ -357,4 +376,107 @@ class WalletOperationViewTest(TestCase):
         response = client.post(url, data, format='json')
         
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+
+
+class WalletThrottlingTest(TestCase):
+    """Tests for rate limiting/throttling."""
+
+    def setUp(self):
+        """Set up test client and wallet."""
+        # Clear cache to avoid throttling issues between tests
+        cache.clear()
+        self.client = APIClient()
+        self.user = User.objects.create_user(
+            username='testuser',
+            email='test@example.com',
+            password='testpass123'
+        )
+        self.wallet = Wallet.objects.create(balance=Decimal('10000.00'))
+        # Get JWT token for authentication
+        refresh = RefreshToken.for_user(self.user)
+        self.client.credentials(HTTP_AUTHORIZATION=f'Bearer {refresh.access_token}')
+
+    def tearDown(self):
+        """Clean up after test."""
+        # Clear cache after each test
+        cache.clear()
+
+    def test_wallet_detail_throttling(self):
+        """Test that GET requests are throttled after limit."""
+        url = reverse('wallets:wallet-detail', kwargs={'wallet_uuid': self.wallet.id})
+        
+        # Make requests up to the limit + 1 to ensure we exceed the limit
+        request_limit = THROTTLE_READ_LIMIT + 1
+        successful_requests = 0
+        throttled_response = None
+        
+        for i in range(request_limit):
+            response = self.client.get(url)
+            if response.status_code == status.HTTP_200_OK:
+                successful_requests += 1
+            elif response.status_code == status.HTTP_429_TOO_MANY_REQUESTS:
+                throttled_response = response
+                break
+        
+        # Should have made at least some successful requests
+        self.assertGreater(successful_requests, 0)
+        
+        # Should eventually get throttled
+        if throttled_response is None:
+            # If we didn't get throttled, make more requests
+            for i in range(50):
+                response = self.client.get(url)
+                if response.status_code == status.HTTP_429_TOO_MANY_REQUESTS:
+                    throttled_response = response
+                    break
+        
+        # Verify throttling response
+        self.assertIsNotNone(throttled_response)
+        self.assertEqual(
+            throttled_response.status_code,
+            status.HTTP_429_TOO_MANY_REQUESTS
+        )
+
+    def test_wallet_operation_throttling(self):
+        """Test that POST requests are throttled after limit."""
+        url = reverse(
+            'wallets:wallet-operation',
+            kwargs={'wallet_uuid': self.wallet.id}
+        )
+        data = {
+            'operation_type': 'DEPOSIT',
+            'amount': '1.00'
+        }
+        
+        # Make requests up to the limit + 1 to ensure we exceed the limit
+        request_limit = THROTTLE_WRITE_LIMIT + 1
+        successful_requests = 0
+        throttled_response = None
+        
+        for i in range(request_limit):
+            response = self.client.post(url, data, format='json')
+            if response.status_code == status.HTTP_200_OK:
+                successful_requests += 1
+            elif response.status_code == status.HTTP_429_TOO_MANY_REQUESTS:
+                throttled_response = response
+                break
+        
+        # Should have made at least some successful requests
+        self.assertGreater(successful_requests, 0)
+        
+        # Should eventually get throttled
+        if throttled_response is None:
+            # If we didn't get throttled, make more requests
+            for i in range(50):
+                response = self.client.post(url, data, format='json')
+                if response.status_code == status.HTTP_429_TOO_MANY_REQUESTS:
+                    throttled_response = response
+                    break
+        
+        # Verify throttling response
+        self.assertIsNotNone(throttled_response)
+        self.assertEqual(
+            throttled_response.status_code,
+            status.HTTP_429_TOO_MANY_REQUESTS
+        )
 

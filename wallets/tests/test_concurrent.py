@@ -2,6 +2,7 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 from decimal import Decimal
 
 from django.contrib.auth import get_user_model
+from django.core.cache import cache
 from django.db import connections
 from django.test import TransactionTestCase
 from django.urls import reverse
@@ -26,6 +27,8 @@ class ConcurrentOperationsTest(TransactionTestCase):
 
     def setUp(self):
         """Set up test client and wallet."""
+        # Clear cache to avoid throttling issues between tests
+        cache.clear()
         self.user = User.objects.create_user(
             username='testuser',
             email='test@example.com',
@@ -40,6 +43,8 @@ class ConcurrentOperationsTest(TransactionTestCase):
 
     def tearDown(self):
         """Close all DB connections after test."""
+        # Clear cache after each test
+        cache.clear()
         # Close all database connections
         # Required for concurrent tests to avoid errors when deleting test DB
         connections.close_all()

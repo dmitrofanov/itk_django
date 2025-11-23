@@ -22,3 +22,9 @@ OPERATION_TYPE_MAX_LENGTH = 10
 OPERATION_TYPE_DEPOSIT = 'DEPOSIT'
 OPERATION_TYPE_WITHDRAW = 'WITHDRAW'
 
+# Throttling configuration
+THROTTLE_READ_LIMIT = 200  # Number of GET requests per hour
+THROTTLE_WRITE_LIMIT = 100  # Number of POST requests per hour
+THROTTLE_READ_RATE = f'{THROTTLE_READ_LIMIT}/hour'  # GET requests limit
+THROTTLE_WRITE_RATE = f'{THROTTLE_WRITE_LIMIT}/hour'  # POST requests limit
+
