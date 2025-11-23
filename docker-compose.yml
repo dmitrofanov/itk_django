@@ -24,7 +24,7 @@ services:
     ports:
       - "3000:8000"
     environment:
-      - DEBUG=${DEBUG:-True}
+      - DEBUG=${DEBUG:-False}
       - POSTGRES_DB=${POSTGRES_DB:-wallet_db}
       - POSTGRES_USER=${POSTGRES_USER:-wallet_user}
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-wallet_password}
