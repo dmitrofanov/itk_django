@@ -29,13 +29,40 @@ class WalletSerializerTest(TestCase):
     
     def test_wallet_serializer_read_only_fields(self):
         """Test that id, created_at, updated_at fields are read-only."""
-        serializer = WalletSerializer(self.wallet)
-
-        # Read-only fields should be ignored on update
-        data = serializer.data
-        self.assertIn('id', data)
-        self.assertIn('created_at', data)
-        self.assertIn('updated_at', data)
+        original_id = self.wallet.id
+        original_created_at = self.wallet.created_at
+        
+        # Attempt to update with read-only fields
+        # These fields should be ignored during update
+        update_data = {
+            'id': '00000000-0000-0000-0000-000000000000',  # Try to change ID
+            'balance': Decimal('2000.00'),
+            'created_at': '2020-01-01T00:00:00Z',  # Try to change created_at
+            'updated_at': '2020-01-01T00:00:00Z'   # Try to change updated_at
+        }
+        
+        serializer = WalletSerializer(
+            self.wallet,
+            data=update_data,
+            partial=True
+        )
+        self.assertTrue(serializer.is_valid())
+        serializer.save()
+        
+        # Refresh from database
+        self.wallet.refresh_from_db()
+        
+        # Read-only fields should remain unchanged
+        self.assertEqual(self.wallet.id, original_id)
+        self.assertEqual(self.wallet.created_at, original_created_at)
+        # updated_at will change automatically (auto_now=True), 
+        # but not to the value we provided
+        self.assertNotEqual(
+            str(self.wallet.updated_at),
+            '2020-01-01T00:00:00Z'
+        )
+        # Balance should be updated (not read-only)
+        self.assertEqual(self.wallet.balance, Decimal('2000.00'))
     
     def test_wallet_serializer_validate_negative_balance(self):
         """Test negative balance validation."""

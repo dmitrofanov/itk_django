@@ -24,6 +24,7 @@ REST API service for wallet balance management.
 ### Running the Project
 
 1. Clone the repository
+
 2. (Optional) Create `.env` file based on `env.example` for environment variables:
    ```bash
    cp env.example .env
@@ -37,6 +38,12 @@ REST API service for wallet balance management.
    ```
 
 4. Application will be available at: `http://localhost:3000`
+
+5. Don't forget to create Django superuser:
+   ```bash
+   docker-compose exec web python manage.py createsuperuser
+   ```
+
 
 ## API Usage
 
