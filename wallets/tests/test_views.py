@@ -122,7 +122,11 @@ class WalletOperationViewTest(TestCase):
         response = self.client.post(url, data, format='json')
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-        self.assertIn('error', response.data)
+        self.assertIn('errors', response.data)
+        self.assertIn('non_field_errors', response.data['errors'])
+        # Check error message contains "Insufficient balance"
+        error_message = response.data['errors']['non_field_errors'][0]
+        self.assertIn('Insufficient balance', error_message)
 
         # Check balance didn't change
         self.wallet.refresh_from_db()
@@ -144,8 +148,11 @@ class WalletOperationViewTest(TestCase):
         response = self.client.post(url, data, format='json')
         
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
-        self.assertIn('error', response.data)
-        self.assertIn(str(fake_uuid), response.data['error'])
+        self.assertIn('errors', response.data)
+        self.assertIn('non_field_errors', response.data['errors'])
+        # Check error message contains wallet UUID
+        error_message = response.data['errors']['non_field_errors'][0]
+        self.assertIn(str(fake_uuid), error_message)
     
     def test_operation_invalid_operation_type(self):
         """Test operation with invalid type."""
@@ -160,7 +167,8 @@ class WalletOperationViewTest(TestCase):
         response = self.client.post(url, data, format='json')
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-        self.assertIn('operation_type', response.data)
+        self.assertIn('errors', response.data)
+        self.assertIn('operation_type', response.data['errors'])
 
     def test_operation_missing_operation_type(self):
         """Test operation without type."""
@@ -174,7 +182,8 @@ class WalletOperationViewTest(TestCase):
         response = self.client.post(url, data, format='json')
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-        self.assertIn('operation_type', response.data)
+        self.assertIn('errors', response.data)
+        self.assertIn('operation_type', response.data['errors'])
 
     def test_operation_missing_amount(self):
         """Test operation without amount."""
@@ -188,7 +197,8 @@ class WalletOperationViewTest(TestCase):
         response = self.client.post(url, data, format='json')
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-        self.assertIn('amount', response.data)
+        self.assertIn('errors', response.data)
+        self.assertIn('amount', response.data['errors'])
 
     def test_operation_zero_amount(self):
         """Test operation with zero amount."""
@@ -203,7 +213,8 @@ class WalletOperationViewTest(TestCase):
         response = self.client.post(url, data, format='json')
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-        self.assertIn('amount', response.data)
+        self.assertIn('errors', response.data)
+        self.assertIn('amount', response.data['errors'])
 
     def test_operation_negative_amount(self):
         """Test operation with negative amount."""
@@ -218,7 +229,8 @@ class WalletOperationViewTest(TestCase):
         response = self.client.post(url, data, format='json')
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-        self.assertIn('amount', response.data)
+        self.assertIn('errors', response.data)
+        self.assertIn('amount', response.data['errors'])
 
     def test_operation_minimum_amount(self):
         """Test operation with minimum amount (0.01)."""

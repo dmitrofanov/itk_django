@@ -58,8 +58,9 @@ def wallet_operation(request, wallet_uuid):
             f"Invalid operation data for wallet {wallet_uuid}: "
             f"{serializer.errors}"
         )
+        # Standardize error format
         return Response(
-            serializer.errors,
+            {'errors': serializer.errors},
             status=status.HTTP_400_BAD_REQUEST
         )
 
@@ -83,19 +84,19 @@ def wallet_operation(request, wallet_uuid):
 
     except WalletNotFoundError as e:
         return Response(
-            {'error': str(e)},
+            {'errors': {'non_field_errors': [str(e)]}},
             status=status.HTTP_404_NOT_FOUND
         )
 
     except InsufficientBalanceError as e:
         return Response(
-            {'error': str(e)},
+            {'errors': {'non_field_errors': [str(e)]}},
             status=status.HTTP_400_BAD_REQUEST
         )
 
     except UnknownOperationTypeError as e:
         return Response(
-            {'error': str(e)},
+            {'errors': {'non_field_errors': [str(e)]}},
             status=status.HTTP_400_BAD_REQUEST
         )
 
@@ -107,7 +108,7 @@ def wallet_operation(request, wallet_uuid):
             exc_info=True
         )
         return Response(
-            {'error': 'Internal server error'},
+            {'errors': {'non_field_errors': ['Internal server error']}},
             status=status.HTTP_500_INTERNAL_SERVER_ERROR
         )
 
