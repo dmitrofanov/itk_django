@@ -1,4 +1,5 @@
 from django.db import models
+from django.core.exceptions import ValidationError
 from django.core.validators import MinValueValidator
 from decimal import Decimal
 import uuid
@@ -25,7 +26,7 @@ class Wallet(models.Model):
     def clean(self):
         """Валидация на уровне модели"""
         if self.balance < 0:
-            raise models.ValidationError({'balance': 'Balance cannot be negative'})
+            raise ValidationError({'balance': 'Balance cannot be negative'})
 
     def __str__(self):
         return f"Wallet {self.id} - Balance: {self.balance}"
@@ -62,7 +63,7 @@ class WalletOperation(models.Model):
     def clean(self):
         """Валидация на уровне модели"""
         if self.amount <= 0:
-            raise models.ValidationError({'amount': 'Amount must be greater than zero'})
+            raise ValidationError({'amount': 'Amount must be greater than zero'})
 
     def __str__(self):
         return f"{self.operation_type} {self.amount} for wallet {self.wallet.id}"

@@ -29,8 +29,7 @@ class WalletOperationSerializer(serializers.Serializer):
     amount = serializers.DecimalField(
         max_digits=20, 
         decimal_places=2, 
-        min_value=Decimal('0.01'),
-        max_value=Decimal('1000000.00')  # Максимальное значение для DecimalField
+        min_value=Decimal('0.01')
     )
     
     def validate_amount(self, value):
