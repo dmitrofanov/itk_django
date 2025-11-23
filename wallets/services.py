@@ -1,8 +1,12 @@
 import logging
 
 from django.db import transaction
-from django.core.exceptions import ValidationError
 
+from .exceptions import (
+    InsufficientBalanceError,
+    UnknownOperationTypeError,
+    WalletNotFoundError,
+)
 from .models import Wallet, WalletOperation
 
 # Logger for wallet operations
@@ -23,15 +27,16 @@ def execute_wallet_operation(wallet_uuid, operation_type, amount):
         Wallet: Updated wallet instance
 
     Raises:
-        Wallet.DoesNotExist: If wallet not found
-        ValidationError: If insufficient balance for withdrawal
+        WalletNotFoundError: If wallet not found
+        InsufficientBalanceError: If insufficient balance for withdrawal
+        UnknownOperationTypeError: If operation type is unknown
     """
     # Lock wallet row to prevent race conditions
     try:
         wallet = Wallet.objects.select_for_update().get(id=wallet_uuid)
     except Wallet.DoesNotExist:
         logger.warning(f"Wallet {wallet_uuid} not found")
-        raise
+        raise WalletNotFoundError(f"Wallet {wallet_uuid} not found")
 
     # Execute operation based on type
     if operation_type == 'DEPOSIT':
@@ -46,14 +51,20 @@ def execute_wallet_operation(wallet_uuid, operation_type, amount):
                 f"Insufficient balance for wallet {wallet_uuid}. "
                 f"Balance: {wallet.balance}, Requested: {amount}"
             )
-            raise ValidationError('Insufficient balance')
+            raise InsufficientBalanceError(
+                f"Insufficient balance. "
+                f"Current balance: {wallet.balance}, Required: {amount}"
+            )
         wallet.balance -= amount
         logger.info(
             f"Withdraw {amount} from wallet {wallet_uuid}. "
             f"New balance: {wallet.balance}"
         )
     else:
-        raise ValueError(f"Unknown operation type: {operation_type}")
+        raise UnknownOperationTypeError(
+            f"Unknown operation type: {operation_type}. "
+            f"Expected 'DEPOSIT' or 'WITHDRAW'"
+        )
 
     # Save wallet with updated balance
     wallet.save()

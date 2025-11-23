@@ -1,11 +1,15 @@
 import logging
 
-from django.core.exceptions import ValidationError
 from django.shortcuts import get_object_or_404
 from rest_framework import status
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 
+from .exceptions import (
+    InsufficientBalanceError,
+    UnknownOperationTypeError,
+    WalletNotFoundError,
+)
 from .models import Wallet
 from .serializers import (
     WalletOperationSerializer,
@@ -75,18 +79,21 @@ def wallet_operation(request, wallet_uuid):
             status=status.HTTP_200_OK
         )
 
-    except Wallet.DoesNotExist:
+    except WalletNotFoundError as e:
         return Response(
-            {'error': 'Wallet not found'},
+            {'error': str(e)},
             status=status.HTTP_404_NOT_FOUND
         )
 
-    except ValidationError as e:
-        # ValidationError always has messages attribute (list)
-        # In our service, we always raise ValidationError with a simple string
-        error_message = str(e.messages[0]) if e.messages else str(e)
+    except InsufficientBalanceError as e:
         return Response(
-            {'error': error_message},
+            {'error': str(e)},
+            status=status.HTTP_400_BAD_REQUEST
+        )
+
+    except UnknownOperationTypeError as e:
+        return Response(
+            {'error': str(e)},
             status=status.HTTP_400_BAD_REQUEST
         )
 

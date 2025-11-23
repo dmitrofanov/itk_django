@@ -1,9 +1,13 @@
 import uuid
 from decimal import Decimal
 
-from django.core.exceptions import ValidationError
 from django.test import TestCase
 
+from wallets.exceptions import (
+    InsufficientBalanceError,
+    UnknownOperationTypeError,
+    WalletNotFoundError,
+)
 from wallets.models import Wallet, WalletOperation
 from wallets.services import execute_wallet_operation
 
@@ -78,8 +82,8 @@ class WalletServiceTest(TestCase):
         """Test WITHDRAW operation with insufficient balance."""
         withdraw_amount = Decimal('2000.00')  # More than balance
 
-        # Should raise ValidationError
-        with self.assertRaises(ValidationError) as context:
+        # Should raise InsufficientBalanceError
+        with self.assertRaises(InsufficientBalanceError) as context:
             execute_wallet_operation(
                 wallet_uuid=self.wallet_uuid,
                 operation_type='WITHDRAW',
@@ -122,8 +126,8 @@ class WalletServiceTest(TestCase):
         fake_uuid = uuid.uuid4()
         deposit_amount = Decimal('100.00')
 
-        # Should raise Wallet.DoesNotExist
-        with self.assertRaises(Wallet.DoesNotExist):
+        # Should raise WalletNotFoundError
+        with self.assertRaises(WalletNotFoundError):
             execute_wallet_operation(
                 wallet_uuid=fake_uuid,
                 operation_type='DEPOSIT',
@@ -134,8 +138,8 @@ class WalletServiceTest(TestCase):
         """Test operation with unknown operation type."""
         deposit_amount = Decimal('100.00')
 
-        # Should raise ValueError
-        with self.assertRaises(ValueError) as context:
+        # Should raise UnknownOperationTypeError
+        with self.assertRaises(UnknownOperationTypeError) as context:
             execute_wallet_operation(
                 wallet_uuid=self.wallet_uuid,
                 operation_type='UNKNOWN',
@@ -337,7 +341,7 @@ class WalletServiceTest(TestCase):
         withdraw_amount = Decimal('2000.00')  # More than balance
 
         # Attempt withdraw that will fail
-        with self.assertRaises(ValidationError):
+        with self.assertRaises(InsufficientBalanceError):
             execute_wallet_operation(
                 wallet_uuid=self.wallet_uuid,
                 operation_type='WITHDRAW',
