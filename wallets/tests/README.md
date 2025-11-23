@@ -23,6 +23,17 @@ Tests for API endpoints:
 - Input validation
 - Response structure validation
 
+### test_services.py
+Tests for service layer (`WalletService`):
+- `execute_operation` method - business logic testing
+- DEPOSIT operations
+- WITHDRAW operations
+- Error handling (insufficient balance, wallet not found, unknown operation type)
+- Transaction rollback on errors
+- Audit trail creation
+- Edge cases (zero balance, large amounts, small amounts)
+- Operation sequences
+
 ### test_concurrent.py
 Tests for concurrent request handling:
 - Simultaneous DEPOSIT operations
@@ -56,8 +67,8 @@ coverage report
 
 ## Test Statistics
 
-- **Total tests:** ~50+
-- **Coverage:** Models, Serializers, Views, Concurrent operations
+- **Total tests:** ~70+
+- **Coverage:** Models, Serializers, Views, Services, Concurrent operations
 - **Test types:** Unit, Integration, Concurrent
 
 ## Important Tests
