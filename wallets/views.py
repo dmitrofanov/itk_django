@@ -38,6 +38,13 @@ class WalletWriteThrottle(UserRateThrottle):
     rate = THROTTLE_WRITE_RATE
 
 
+def _get_user_wallet_or_404(user, wallet_uuid):
+    wallet = Wallet.objects.filter(id=wallet_uuid, user=user).first()
+    if wallet is None:
+        raise Http404('Wallet not found')
+    return wallet
+
+
 @extend_schema(
     summary='Get wallet information',
     description='Retrieve wallet information including balance by wallet UUID',
@@ -58,13 +65,6 @@ class WalletWriteThrottle(UserRateThrottle):
     ],
     tags=['Wallets'],
 )
-def _get_user_wallet_or_404(user, wallet_uuid):
-    wallet = Wallet.objects.filter(id=wallet_uuid, user=user).first()
-    if wallet is None:
-        raise Http404('Wallet not found')
-    return wallet
-
-
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 @throttle_classes([WalletReadThrottle])
