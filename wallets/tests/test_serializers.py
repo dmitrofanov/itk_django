@@ -1,5 +1,6 @@
 from decimal import Decimal
 
+from django.contrib.auth import get_user_model
 from django.test import TestCase
 from rest_framework.exceptions import ValidationError as DRFValidationError
 
@@ -10,12 +11,23 @@ from wallets.serializers import (
 )
 
 
+User = get_user_model()
+
+
 class WalletSerializerTest(TestCase):
     """Tests for WalletSerializer."""
 
     def setUp(self):
         """Set up wallet for tests."""
-        self.wallet = Wallet.objects.create(balance=Decimal('1000.00'))
+        self.user = User.objects.create_user(
+            username='wallet_serializer_user',
+            email='wallet_serializer@example.com',
+            password='testpass123'
+        )
+        self.wallet = Wallet.objects.create(
+            user=self.user,
+            balance=Decimal('1000.00')
+        )
 
     def test_wallet_serialization(self):
         """Test wallet serialization."""

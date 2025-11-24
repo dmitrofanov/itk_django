@@ -1,17 +1,29 @@
 from decimal import Decimal
 
+from django.contrib.auth import get_user_model
 from django.core.exceptions import ValidationError
 from django.test import TestCase
 
 from wallets.models import Wallet, WalletOperation
 
 
+User = get_user_model()
+
+
 class WalletModelTest(TestCase):
     """Tests for Wallet model."""
 
+    @classmethod
+    def setUpTestData(cls):
+        cls.user = User.objects.create_user(
+            username='wallet_model_user',
+            email='wallet_model@example.com',
+            password='testpass123'
+        )
+
     def test_wallet_creation(self):
         """Test wallet creation with default balance."""
-        wallet = Wallet.objects.create()
+        wallet = Wallet.objects.create(user=self.user)
         self.assertEqual(wallet.balance, Decimal('0.00'))
         self.assertIsNotNone(wallet.id)
         self.assertIsNotNone(wallet.created_at)
@@ -19,12 +31,18 @@ class WalletModelTest(TestCase):
 
     def test_wallet_creation_with_balance(self):
         """Test wallet creation with specified balance."""
-        wallet = Wallet.objects.create(balance=Decimal('1000.50'))
+        wallet = Wallet.objects.create(
+            user=self.user,
+            balance=Decimal('1000.50')
+        )
         self.assertEqual(wallet.balance, Decimal('1000.50'))
 
     def test_wallet_str_representation(self):
         """Test wallet string representation."""
-        wallet = Wallet.objects.create(balance=Decimal('500.00'))
+        wallet = Wallet.objects.create(
+            user=self.user,
+            balance=Decimal('500.00')
+        )
         str_repr = str(wallet)
         self.assertIn(str(wallet.id), str_repr)
         self.assertIn('500.00', str_repr)
@@ -59,7 +77,15 @@ class WalletOperationModelTest(TestCase):
 
     def setUp(self):
         """Set up wallet for tests."""
-        self.wallet = Wallet.objects.create(balance=Decimal('1000.00'))
+        self.user = User.objects.create_user(
+            username='wallet_operation_user',
+            email='wallet_operation@example.com',
+            password='testpass123'
+        )
+        self.wallet = Wallet.objects.create(
+            user=self.user,
+            balance=Decimal('1000.00')
+        )
 
     def test_operation_creation_deposit(self):
         """Test DEPOSIT operation creation."""

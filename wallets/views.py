@@ -19,6 +19,7 @@ from .exceptions import (
     WalletNotFoundError,
 )
 from .models import Wallet
+from .permissions import IsWalletOwner
 from .serializers import (
     WalletOperationSerializer,
     WalletSerializer
@@ -60,7 +61,7 @@ class WalletWriteThrottle(UserRateThrottle):
     tags=['Wallets'],
 )
 @api_view(['GET'])
-@permission_classes([IsAuthenticated])
+@permission_classes([IsAuthenticated, IsWalletOwner])
 @throttle_classes([WalletReadThrottle])
 def wallet_detail(request, wallet_uuid):
     """
@@ -68,7 +69,13 @@ def wallet_detail(request, wallet_uuid):
 
     GET /api/v1/wallets/{WALLET_UUID}
     """
-    wallet = get_object_or_404(Wallet, id=wallet_uuid)
+    wallet = getattr(request, 'wallet', None)
+    if wallet is None:
+        wallet = get_object_or_404(
+            Wallet,
+            id=wallet_uuid,
+            user=request.user
+        )
     serializer = WalletSerializer(wallet)
     return Response(
         serializer.data,
@@ -99,7 +106,7 @@ def wallet_detail(request, wallet_uuid):
     tags=['Wallets'],
 )
 @api_view(['POST'])
-@permission_classes([IsAuthenticated])
+@permission_classes([IsAuthenticated, IsWalletOwner])
 @throttle_classes([WalletWriteThrottle])
 def wallet_operation(request, wallet_uuid):
     """

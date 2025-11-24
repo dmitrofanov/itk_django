@@ -1,6 +1,7 @@
 import uuid
 from decimal import Decimal
 
+from django.contrib.auth import get_user_model
 from django.test import TestCase
 
 from wallets.exceptions import (
@@ -12,12 +13,23 @@ from wallets.models import Wallet, WalletOperation
 from wallets.services import execute_wallet_operation
 
 
+User = get_user_model()
+
+
 class WalletServiceTest(TestCase):
     """Tests for execute_wallet_operation function."""
 
     def setUp(self):
         """Set up test wallet."""
-        self.wallet = Wallet.objects.create(balance=Decimal('1000.00'))
+        self.user = User.objects.create_user(
+            username='wallet_service_user',
+            email='wallet_service@example.com',
+            password='testpass123'
+        )
+        self.wallet = Wallet.objects.create(
+            user=self.user,
+            balance=Decimal('1000.00')
+        )
         self.wallet_uuid = self.wallet.id
 
     def test_deposit_operation_success(self):
@@ -236,7 +248,10 @@ class WalletServiceTest(TestCase):
     def test_deposit_zero_balance_wallet(self):
         """Test DEPOSIT operation on wallet with zero balance."""
         # Create wallet with zero balance
-        zero_wallet = Wallet.objects.create(balance=Decimal('0.00'))
+        zero_wallet = Wallet.objects.create(
+            user=self.user,
+            balance=Decimal('0.00')
+        )
         deposit_amount = Decimal('100.00')
 
         # Execute deposit

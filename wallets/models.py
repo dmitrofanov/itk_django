@@ -1,6 +1,7 @@
 import uuid
 from decimal import Decimal
 
+from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.core.validators import MinValueValidator
 from django.db import models
@@ -23,6 +24,14 @@ class Wallet(models.Model):
         primary_key=True,
         default=uuid.uuid4,
         editable=False
+    )
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name='wallets',
+        blank=True,
+        null=True,
+        db_index=True,
     )
     balance = models.DecimalField(
         max_digits=DECIMAL_MAX_DIGITS,

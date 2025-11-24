@@ -31,7 +31,15 @@ class WalletDetailViewTest(TestCase):
             email='test@example.com',
             password='testpass123'
         )
-        self.wallet = Wallet.objects.create(balance=Decimal('1000.00'))
+        self.wallet = Wallet.objects.create(
+            user=self.user,
+            balance=Decimal('1000.00')
+        )
+        self.other_user = User.objects.create_user(
+            username='otheruser',
+            email='other@example.com',
+            password='testpass123'
+        )
         # Get JWT token for authentication
         refresh = RefreshToken.for_user(self.user)
         self.client.credentials(HTTP_AUTHORIZATION=f'Bearer {refresh.access_token}')
@@ -78,6 +86,20 @@ class WalletDetailViewTest(TestCase):
 
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
 
+    def test_get_wallet_owned_by_other_user(self):
+        """Ensure users cannot access wallets that belong to someone else."""
+        foreign_wallet = Wallet.objects.create(
+            user=self.other_user,
+            balance=Decimal('250.00')
+        )
+        url = reverse(
+            'wallets:wallet-detail',
+            kwargs={'wallet_uuid': foreign_wallet.id}
+        )
+        response = self.client.get(url)
+
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+
     def test_get_wallet_method_not_allowed(self):
         """Test that POST is not allowed for this endpoint."""
         url = reverse('wallets:wallet-detail', kwargs={'wallet_uuid': self.wallet.id})
@@ -99,7 +121,15 @@ class WalletOperationViewTest(TestCase):
             email='test@example.com',
             password='testpass123'
         )
-        self.wallet = Wallet.objects.create(balance=Decimal('1000.00'))
+        self.wallet = Wallet.objects.create(
+            user=self.user,
+            balance=Decimal('1000.00')
+        )
+        self.other_user = User.objects.create_user(
+            username='otheruser',
+            email='other@example.com',
+            password='testpass123'
+        )
         # Get JWT token for authentication
         refresh = RefreshToken.for_user(self.user)
         self.client.credentials(HTTP_AUTHORIZATION=f'Bearer {refresh.access_token}')
@@ -195,11 +225,8 @@ class WalletOperationViewTest(TestCase):
         response = self.client.post(url, data, format='json')
         
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
-        self.assertIn('errors', response.data)
-        self.assertIn('non_field_errors', response.data['errors'])
-        # Check error message contains wallet UUID
-        error_message = response.data['errors']['non_field_errors'][0]
-        self.assertIn(str(fake_uuid), error_message)
+        self.assertIn('detail', response.data)
+        self.assertEqual(response.data['detail'], 'Wallet not found')
     
     def test_operation_invalid_operation_type(self):
         """Test operation with invalid type."""
@@ -377,6 +404,27 @@ class WalletOperationViewTest(TestCase):
         
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
 
+    def test_operation_on_wallet_owned_by_other_user(self):
+        """Ensure users cannot modify wallets they do not own."""
+        foreign_wallet = Wallet.objects.create(
+            user=self.other_user,
+            balance=Decimal('500.00')
+        )
+        url = reverse(
+            'wallets:wallet-operation',
+            kwargs={'wallet_uuid': foreign_wallet.id}
+        )
+        data = {
+            'operation_type': 'DEPOSIT',
+            'amount': '25.00'
+        }
+
+        response = self.client.post(url, data, format='json')
+
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+        foreign_wallet.refresh_from_db()
+        self.assertEqual(foreign_wallet.balance, Decimal('500.00'))
+
 
 class WalletThrottlingTest(TestCase):
     """Tests for rate limiting/throttling."""
@@ -391,7 +439,10 @@ class WalletThrottlingTest(TestCase):
             email='test@example.com',
             password='testpass123'
         )
-        self.wallet = Wallet.objects.create(balance=Decimal('10000.00'))
+        self.wallet = Wallet.objects.create(
+            user=self.user,
+            balance=Decimal('10000.00')
+        )
         # Get JWT token for authentication
         refresh = RefreshToken.for_user(self.user)
         self.client.credentials(HTTP_AUTHORIZATION=f'Bearer {refresh.access_token}')

@@ -6,9 +6,10 @@ from .models import Wallet, WalletOperation
 @admin.register(Wallet)
 class WalletAdmin(admin.ModelAdmin):
     """Admin interface for Wallet model."""
-    list_display = ['id', 'balance', 'created_at', 'updated_at']
+    list_display = ['id', 'user', 'balance', 'created_at', 'updated_at']
     readonly_fields = ['id', 'created_at', 'updated_at']
-    search_fields = ['id']
+    search_fields = ['id', 'user__username', 'user__email']
+    list_filter = ['created_at', 'updated_at']
 
 
 @admin.register(WalletOperation)

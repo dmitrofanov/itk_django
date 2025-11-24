@@ -34,7 +34,10 @@ class ConcurrentOperationsTest(TransactionTestCase):
             email='test@example.com',
             password='testpass123'
         )
-        self.wallet = Wallet.objects.create(balance=Decimal('1000.00'))
+        self.wallet = Wallet.objects.create(
+            user=self.user,
+            balance=Decimal('1000.00')
+        )
         # Store UUID for use in threads
         self.wallet_uuid = str(self.wallet.id)
         # Get JWT token for authentication
