@@ -2,6 +2,7 @@ import logging
 import traceback
 
 from django.shortcuts import get_object_or_404
+from drf_spectacular.utils import extend_schema, OpenApiParameter, OpenApiResponse
 from rest_framework import status
 from rest_framework.decorators import api_view, permission_classes, throttle_classes
 from rest_framework.permissions import IsAuthenticated
@@ -38,6 +39,26 @@ class WalletWriteThrottle(UserRateThrottle):
     rate = THROTTLE_WRITE_RATE
 
 
+@extend_schema(
+    summary='Get wallet information',
+    description='Retrieve wallet information including balance by wallet UUID',
+    responses={
+        200: WalletSerializer,
+        404: OpenApiResponse(description='Wallet not found'),
+        401: OpenApiResponse(description='Authentication required'),
+        429: OpenApiResponse(description='Rate limit exceeded'),
+    },
+    parameters=[
+        OpenApiParameter(
+            name='wallet_uuid',
+            type=str,
+            location=OpenApiParameter.PATH,
+            description='Wallet UUID',
+            required=True,
+        ),
+    ],
+    tags=['Wallets'],
+)
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 @throttle_classes([WalletReadThrottle])
@@ -55,6 +76,28 @@ def wallet_detail(request, wallet_uuid):
     )
 
 
+@extend_schema(
+    summary='Execute wallet operation',
+    description='Execute DEPOSIT (add) or WITHDRAW (subtract) operation on wallet',
+    request=WalletOperationSerializer,
+    responses={
+        200: WalletSerializer,
+        400: OpenApiResponse(description='Bad request - validation error or insufficient balance'),
+        404: OpenApiResponse(description='Wallet not found'),
+        401: OpenApiResponse(description='Authentication required'),
+        429: OpenApiResponse(description='Rate limit exceeded'),
+    },
+    parameters=[
+        OpenApiParameter(
+            name='wallet_uuid',
+            type=str,
+            location=OpenApiParameter.PATH,
+            description='Wallet UUID',
+            required=True,
+        ),
+    ],
+    tags=['Wallets'],
+)
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 @throttle_classes([WalletWriteThrottle])

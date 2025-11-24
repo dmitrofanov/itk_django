@@ -1,5 +1,6 @@
 from decimal import Decimal
 
+from drf_spectacular.utils import extend_schema_serializer, OpenApiExample
 from rest_framework import serializers
 
 from .constants import (
@@ -11,6 +12,19 @@ from .constants import (
 from .models import Wallet, WalletOperation
 
 
+@extend_schema_serializer(
+    examples=[
+        OpenApiExample(
+            name='Wallet example response',
+            value={
+                'id': '123e4567-e89b-12d3-a456-426614174000',
+                'balance': '1000.00',
+                'created_at': '2025-01-19T10:00:00Z',
+                'updated_at': '2025-01-19T10:30:00Z',
+            },
+        ),
+    ]
+)
 class WalletSerializer(serializers.ModelSerializer):
     """Serializer for wallet."""
 
