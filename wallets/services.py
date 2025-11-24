@@ -39,30 +39,58 @@ def execute_wallet_operation(wallet_uuid, operation_type, amount):
     try:
         wallet = Wallet.objects.select_for_update().get(id=wallet_uuid)
     except Wallet.DoesNotExist:
-        logger.warning(f"Wallet {wallet_uuid} not found")
+        logger.warning(
+            'Wallet not found',
+            extra={
+                'wallet_uuid': str(wallet_uuid),
+                'operation_type': operation_type,
+                'amount': str(amount),
+                'error_type': 'WalletNotFoundError',
+            }
+        )
         raise WalletNotFoundError(f"Wallet {wallet_uuid} not found")
 
     # Execute operation based on type
     if operation_type == OPERATION_TYPE_DEPOSIT:
+        old_balance = wallet.balance
         wallet.balance += amount
         logger.info(
-            f"Deposit {amount} to wallet {wallet_uuid}. "
-            f"New balance: {wallet.balance}"
+            'Deposit operation completed',
+            extra={
+                'wallet_uuid': str(wallet_uuid),
+                'operation_type': operation_type,
+                'amount': str(amount),
+                'old_balance': str(old_balance),
+                'new_balance': str(wallet.balance),
+            }
         )
     elif operation_type == OPERATION_TYPE_WITHDRAW:
         if wallet.balance < amount:
             logger.warning(
-                f"Insufficient balance for wallet {wallet_uuid}. "
-                f"Balance: {wallet.balance}, Requested: {amount}"
+                'Insufficient balance for withdrawal',
+                extra={
+                    'wallet_uuid': str(wallet_uuid),
+                    'operation_type': operation_type,
+                    'amount': str(amount),
+                    'current_balance': str(wallet.balance),
+                    'error_type': 'InsufficientBalanceError',
+                }
             )
             raise InsufficientBalanceError(
                 f"Insufficient balance. "
                 f"Current balance: {wallet.balance}, Required: {amount}"
             )
+        old_balance = wallet.balance
         wallet.balance -= amount
         logger.info(
-            f"Withdraw {amount} from wallet {wallet_uuid}. "
-            f"New balance: {wallet.balance}"
+            'Withdraw operation completed',
+            extra={
+                'wallet_uuid': str(wallet_uuid),
+                'operation_type': operation_type,
+                'amount': str(amount),
+                'old_balance': str(old_balance),
+                'new_balance': str(wallet.balance),
+            }
         )
     else:
         raise UnknownOperationTypeError(

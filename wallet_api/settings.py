@@ -182,19 +182,37 @@ else:
 LOGGING = {
     'version': 1,
     'disable_existing_loggers': False,
+    'formatters': {
+        'json': {
+            '()': 'pythonjsonlogger.jsonlogger.JsonFormatter',
+            'format': '%(asctime)s %(name)s %(levelname)s %(message)s %(pathname)s %(lineno)d',
+        },
+        'verbose': {
+            'format': '{levelname} {asctime} {module} {message}',
+            'style': '{',
+        },
+    },
     'handlers': {
         'console': {
             'class': 'logging.StreamHandler',
+            'formatter': 'json',
+        },
+        'console_verbose': {
+            'class': 'logging.StreamHandler',
+            'formatter': 'verbose',
         },
     },
     'loggers': {
         'django': {
-            'handlers': ['console'],
+            'handlers': ['console_verbose'],
             'level': 'INFO' if not DEBUG else 'DEBUG',
             'propagate': False,
         },
+        'django.utils.autoreload': {
+            'level': 'INFO',
+        },
         'django.db.backends': {
-            'handlers': ['console'],
+            'handlers': ['console_verbose'],
             # DEBUG level only in development
             'level': 'WARNING' if not DEBUG else 'DEBUG',
             'propagate': False,

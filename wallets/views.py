@@ -1,4 +1,5 @@
 import logging
+import traceback
 
 from django.shortcuts import get_object_or_404
 from rest_framework import status
@@ -75,8 +76,13 @@ def wallet_operation(request, wallet_uuid):
     serializer = WalletOperationSerializer(data=request.data)
     if not serializer.is_valid():
         logger.warning(
-            f"Invalid operation data for wallet {wallet_uuid}: "
-            f"{serializer.errors}"
+            'Invalid operation data',
+            extra={
+                'wallet_uuid': str(wallet_uuid),
+                'user_id': request.user.id,
+                'endpoint': 'wallet_operation',
+                'errors': serializer.errors,
+            }
         )
         # Standardize error format
         return Response(
@@ -95,6 +101,18 @@ def wallet_operation(request, wallet_uuid):
             amount=amount
         )
 
+        logger.info(
+            'Operation completed successfully',
+            extra={
+                'wallet_uuid': str(wallet_uuid),
+                'user_id': request.user.id,
+                'operation_type': operation_type,
+                'amount': str(amount),
+                'new_balance': str(wallet.balance),
+                'endpoint': 'wallet_operation',
+            }
+        )
+
         # Return updated wallet data
         serializer_wallet = WalletSerializer(wallet)
         return Response(
@@ -103,28 +121,68 @@ def wallet_operation(request, wallet_uuid):
         )
 
     except WalletNotFoundError as e:
+        logger.warning(
+            'Wallet not found',
+            extra={
+                'wallet_uuid': str(wallet_uuid),
+                'user_id': request.user.id,
+                'operation_type': operation_type,
+                'amount': str(amount),
+                'endpoint': 'wallet_operation',
+                'error_type': 'WalletNotFoundError',
+            }
+        )
         return Response(
             {'errors': {'non_field_errors': [str(e)]}},
             status=status.HTTP_404_NOT_FOUND
         )
 
     except InsufficientBalanceError as e:
+        logger.warning(
+            'Insufficient balance',
+            extra={
+                'wallet_uuid': str(wallet_uuid),
+                'user_id': request.user.id,
+                'operation_type': operation_type,
+                'amount': str(amount),
+                'endpoint': 'wallet_operation',
+                'error_type': 'InsufficientBalanceError',
+            }
+        )
         return Response(
             {'errors': {'non_field_errors': [str(e)]}},
             status=status.HTTP_400_BAD_REQUEST
         )
 
     except UnknownOperationTypeError as e:
+        logger.warning(
+            'Unknown operation type',
+            extra={
+                'wallet_uuid': str(wallet_uuid),
+                'user_id': request.user.id,
+                'operation_type': operation_type,
+                'amount': str(amount),
+                'endpoint': 'wallet_operation',
+                'error_type': 'UnknownOperationTypeError',
+            }
+        )
         return Response(
             {'errors': {'non_field_errors': [str(e)]}},
             status=status.HTTP_400_BAD_REQUEST
         )
 
     except Exception as e:
-        # Log unexpected errors and return generic error message
         logger.error(
-            f"Error processing operation for wallet {wallet_uuid}: "
-            f"{str(e)}",
+            'Unexpected error processing operation',
+            extra={
+                'wallet_uuid': str(wallet_uuid),
+                'user_id': request.user.id,
+                'operation_type': operation_type,
+                'amount': str(amount),
+                'endpoint': 'wallet_operation',
+                'error_type': type(e).__name__,
+                'error_message': str(e),
+            },
             exc_info=True
         )
         return Response(
