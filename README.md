@@ -40,7 +40,7 @@ REST API service for wallet balance management.
    docker-compose up --build
    ```
 
-4. Application will be available at: `http://localhost:3000`
+4. Application will be available at: `http://localhost:8000`
 
 5. Don't forget to create Django superuser:
    ```bash

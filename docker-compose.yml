@@ -18,11 +18,10 @@ services:
   web:
     build: .
     command: sh -c "/wait-for-db.sh db python manage.py migrate && python manage.py runserver 0.0.0.0:8000"
-    # command: sh -c "/wait-for-db.sh db python manage.py migrate && gunicorn --bind 0.0.0.0:8000 --workers 3 wallet_api.wsgi:application"
     volumes:
       - .:/app
     ports:
-      - "3000:8000"
+      - "8000:8000"
     environment:
       - DEBUG=${DEBUG}
       - POSTGRES_DB=${POSTGRES_DB}
