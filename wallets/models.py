@@ -63,7 +63,6 @@ class Wallet(models.Model):
 
         Args:
             amount: Amount to deposit
-            operation_type: Type of operation (default: OPERATION_TYPE_DEPOSIT)
 
         Returns:
             None
@@ -87,7 +86,6 @@ class Wallet(models.Model):
 
         Args:
             amount: Amount to withdraw
-            operation_type: Type of operation (default: OPERATION_TYPE_WITHDRAW)
 
         Raises:
             InsufficientBalanceError: If insufficient balance for withdrawal
