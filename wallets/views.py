@@ -1,7 +1,6 @@
 import logging
-import traceback
 
-from django.shortcuts import get_object_or_404
+from django.http import Http404
 from drf_spectacular.utils import extend_schema, OpenApiParameter, OpenApiResponse
 from rest_framework import status
 from rest_framework.decorators import api_view, permission_classes, throttle_classes
@@ -19,7 +18,6 @@ from .exceptions import (
     WalletNotFoundError,
 )
 from .models import Wallet
-from .permissions import IsWalletOwner
 from .serializers import (
     WalletOperationSerializer,
     WalletSerializer
@@ -60,8 +58,15 @@ class WalletWriteThrottle(UserRateThrottle):
     ],
     tags=['Wallets'],
 )
+def _get_user_wallet_or_404(user, wallet_uuid):
+    wallet = Wallet.objects.filter(id=wallet_uuid, user=user).first()
+    if wallet is None:
+        raise Http404('Wallet not found')
+    return wallet
+
+
 @api_view(['GET'])
-@permission_classes([IsAuthenticated, IsWalletOwner])
+@permission_classes([IsAuthenticated])
 @throttle_classes([WalletReadThrottle])
 def wallet_detail(request, wallet_uuid):
     """
@@ -69,13 +74,7 @@ def wallet_detail(request, wallet_uuid):
 
     GET /api/v1/wallets/{WALLET_UUID}
     """
-    wallet = getattr(request, 'wallet', None)
-    if wallet is None:
-        wallet = get_object_or_404(
-            Wallet,
-            id=wallet_uuid,
-            user=request.user
-        )
+    wallet = _get_user_wallet_or_404(request.user, wallet_uuid)
     serializer = WalletSerializer(wallet)
     return Response(
         serializer.data,
@@ -106,7 +105,7 @@ def wallet_detail(request, wallet_uuid):
     tags=['Wallets'],
 )
 @api_view(['POST'])
-@permission_classes([IsAuthenticated, IsWalletOwner])
+@permission_classes([IsAuthenticated])
 @throttle_classes([WalletWriteThrottle])
 def wallet_operation(request, wallet_uuid):
     """
@@ -122,6 +121,8 @@ def wallet_operation(request, wallet_uuid):
 
     Note: operation_type values are defined in wallets.constants
     """
+    wallet = _get_user_wallet_or_404(request.user, wallet_uuid)
+
     # Validate input data
     serializer = WalletOperationSerializer(data=request.data)
     if not serializer.is_valid():
@@ -146,7 +147,7 @@ def wallet_operation(request, wallet_uuid):
     try:
         # Execute operation using service layer
         wallet = execute_wallet_operation(
-            wallet_uuid=wallet_uuid,
+            wallet_uuid=wallet.id,
             operation_type=operation_type,
             amount=amount
         )

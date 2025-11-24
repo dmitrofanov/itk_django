@@ -29,8 +29,6 @@ class Wallet(models.Model):
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
         related_name='wallets',
-        blank=True,
-        null=True,
         db_index=True,
     )
     balance = models.DecimalField(
