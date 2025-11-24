@@ -4,6 +4,7 @@ from django.contrib.auth import get_user_model
 from django.core.exceptions import ValidationError
 from django.test import TestCase
 
+from wallets.exceptions import InsufficientBalanceError
 from wallets.models import Wallet, WalletOperation
 
 
@@ -70,6 +71,131 @@ class WalletModelTest(TestCase):
             wallet.clean()
         except ValidationError:
             self.fail("clean() raised ValidationError unexpectedly for positive balance")
+
+    def test_deposit_positive_amount(self):
+        """Test deposit with positive amount."""
+        wallet = Wallet.objects.create(
+            user=self.user,
+            balance=Decimal('100.00')
+        )
+        old_balance = wallet.balance
+        deposit_amount = Decimal('50.00')
+        
+        wallet.deposit(deposit_amount)
+        
+        self.assertEqual(wallet.balance, old_balance + deposit_amount)
+        self.assertEqual(wallet.balance, Decimal('150.00'))
+
+    def test_deposit_zero_balance(self):
+        """Test deposit on wallet with zero balance."""
+        wallet = Wallet.objects.create(
+            user=self.user,
+            balance=Decimal('0.00')
+        )
+        deposit_amount = Decimal('100.00')
+        
+        wallet.deposit(deposit_amount)
+        
+        self.assertEqual(wallet.balance, deposit_amount)
+
+    def test_deposit_multiple_times(self):
+        """Test multiple deposits."""
+        wallet = Wallet.objects.create(
+            user=self.user,
+            balance=Decimal('100.00')
+        )
+        
+        wallet.deposit(Decimal('50.00'))
+        self.assertEqual(wallet.balance, Decimal('150.00'))
+        
+        wallet.deposit(Decimal('25.50'))
+        self.assertEqual(wallet.balance, Decimal('175.50'))
+        
+        wallet.deposit(Decimal('10.00'))
+        self.assertEqual(wallet.balance, Decimal('185.50'))
+
+    def test_withdraw_sufficient_balance(self):
+        """Test withdraw with sufficient balance."""
+        wallet = Wallet.objects.create(
+            user=self.user,
+            balance=Decimal('1000.00')
+        )
+        old_balance = wallet.balance
+        withdraw_amount = Decimal('300.00')
+        
+        wallet.withdraw(withdraw_amount)
+        
+        self.assertEqual(wallet.balance, old_balance - withdraw_amount)
+        self.assertEqual(wallet.balance, Decimal('700.00'))
+
+    def test_withdraw_exact_balance(self):
+        """Test withdraw exact balance amount."""
+        wallet = Wallet.objects.create(
+            user=self.user,
+            balance=Decimal('500.00')
+        )
+        withdraw_amount = Decimal('500.00')
+        
+        wallet.withdraw(withdraw_amount)
+        
+        self.assertEqual(wallet.balance, Decimal('0.00'))
+
+    def test_withdraw_insufficient_balance(self):
+        """Test withdraw with insufficient balance raises error."""
+        wallet = Wallet.objects.create(
+            user=self.user,
+            balance=Decimal('100.00')
+        )
+        withdraw_amount = Decimal('200.00')
+        
+        with self.assertRaises(InsufficientBalanceError) as context:
+            wallet.withdraw(withdraw_amount)
+        
+        # Check that balance was not changed
+        self.assertEqual(wallet.balance, Decimal('100.00'))
+        
+        # Check error message contains relevant information
+        error_message = str(context.exception)
+        self.assertIn('Insufficient balance', error_message)
+        self.assertIn('100.00', error_message)
+        self.assertIn('200.00', error_message)
+
+    def test_withdraw_zero_balance(self):
+        """Test withdraw from wallet with zero balance raises error."""
+        wallet = Wallet.objects.create(
+            user=self.user,
+            balance=Decimal('0.00')
+        )
+        withdraw_amount = Decimal('10.00')
+        
+        with self.assertRaises(InsufficientBalanceError):
+            wallet.withdraw(withdraw_amount)
+        
+        # Check that balance remains zero
+        self.assertEqual(wallet.balance, Decimal('0.00'))
+
+    def test_deposit_and_withdraw_sequence(self):
+        """Test sequence of deposit and withdraw operations."""
+        wallet = Wallet.objects.create(
+            user=self.user,
+            balance=Decimal('1000.00')
+        )
+        
+        # Initial deposit
+        wallet.deposit(Decimal('500.00'))
+        self.assertEqual(wallet.balance, Decimal('1500.00'))
+        
+        # Withdraw
+        wallet.withdraw(Decimal('200.00'))
+        self.assertEqual(wallet.balance, Decimal('1300.00'))
+        
+        # Another deposit
+        wallet.deposit(Decimal('100.00'))
+        self.assertEqual(wallet.balance, Decimal('1400.00'))
+        
+        # Another withdraw
+        wallet.withdraw(Decimal('400.00'))
+        self.assertEqual(wallet.balance, Decimal('1000.00'))
 
 
 class WalletOperationModelTest(TestCase):

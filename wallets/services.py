@@ -52,46 +52,9 @@ def execute_wallet_operation(wallet_uuid, operation_type, amount):
 
     # Execute operation based on type
     if operation_type == OPERATION_TYPE_DEPOSIT:
-        old_balance = wallet.balance
-        wallet.balance += amount
-        logger.info(
-            'Deposit operation completed',
-            extra={
-                'wallet_uuid': str(wallet_uuid),
-                'operation_type': operation_type,
-                'amount': str(amount),
-                'old_balance': str(old_balance),
-                'new_balance': str(wallet.balance),
-            }
-        )
+        wallet.deposit(amount)
     elif operation_type == OPERATION_TYPE_WITHDRAW:
-        if wallet.balance < amount:
-            logger.warning(
-                'Insufficient balance for withdrawal',
-                extra={
-                    'wallet_uuid': str(wallet_uuid),
-                    'operation_type': operation_type,
-                    'amount': str(amount),
-                    'current_balance': str(wallet.balance),
-                    'error_type': 'InsufficientBalanceError',
-                }
-            )
-            raise InsufficientBalanceError(
-                f"Insufficient balance. "
-                f"Current balance: {wallet.balance}, Required: {amount}"
-            )
-        old_balance = wallet.balance
-        wallet.balance -= amount
-        logger.info(
-            'Withdraw operation completed',
-            extra={
-                'wallet_uuid': str(wallet_uuid),
-                'operation_type': operation_type,
-                'amount': str(amount),
-                'old_balance': str(old_balance),
-                'new_balance': str(wallet.balance),
-            }
-        )
+        wallet.withdraw(amount)
     else:
         raise UnknownOperationTypeError(
             f"Unknown operation type: {operation_type}. "

@@ -1,3 +1,4 @@
+import logging
 import uuid
 from decimal import Decimal
 
@@ -16,6 +17,10 @@ from .constants import (
     WALLET_DEFAULT_BALANCE,
     WALLET_MIN_BALANCE,
 )
+from .exceptions import InsufficientBalanceError
+
+# Logger for wallet operations
+logger = logging.getLogger('wallets')
 
 
 class Wallet(models.Model):
@@ -51,6 +56,72 @@ class Wallet(models.Model):
             raise ValidationError({
                 'balance': 'Balance cannot be negative'
             })
+
+    def deposit(self, amount):
+        """
+        Deposit amount to wallet balance.
+
+        Args:
+            amount: Amount to deposit
+            operation_type: Type of operation (default: OPERATION_TYPE_DEPOSIT)
+
+        Returns:
+            None
+        """
+        old_balance = self.balance
+        self.balance += amount
+        logger.info(
+            'Deposit operation completed',
+            extra={
+                'wallet_uuid': str(self.id),
+                'operation_type': OPERATION_TYPE_DEPOSIT,
+                'amount': str(amount),
+                'old_balance': str(old_balance),
+                'new_balance': str(self.balance),
+            }
+        )
+
+    def withdraw(self, amount):
+        """
+        Withdraw amount from wallet balance.
+
+        Args:
+            amount: Amount to withdraw
+            operation_type: Type of operation (default: OPERATION_TYPE_WITHDRAW)
+
+        Raises:
+            InsufficientBalanceError: If insufficient balance for withdrawal
+
+        Returns:
+            None
+        """
+        if self.balance < amount:
+            logger.warning(
+                'Insufficient balance for withdrawal',
+                extra={
+                    'wallet_uuid': str(self.id),
+                    'operation_type': OPERATION_TYPE_WITHDRAW,
+                    'amount': str(amount),
+                    'current_balance': str(self.balance),
+                    'error_type': 'InsufficientBalanceError',
+                }
+            )
+            raise InsufficientBalanceError(
+                f"Insufficient balance. "
+                f"Current balance: {self.balance}, Required: {amount}"
+            )
+        old_balance = self.balance
+        self.balance -= amount
+        logger.info(
+            'Withdraw operation completed',
+            extra={
+                'wallet_uuid': str(self.id),
+                'operation_type': OPERATION_TYPE_WITHDRAW,
+                'amount': str(amount),
+                'old_balance': str(old_balance),
+                'new_balance': str(self.balance),
+            }
+        )
 
     def __str__(self):
         return f"Wallet {self.id} - Balance: {self.balance}"
